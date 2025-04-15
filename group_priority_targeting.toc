@@ -1,0 +1,12 @@
+## Interface: 110100
+## Title: Group Priority Targets
+## Notes: Draws a dot, circle, pip, icon etc. over a given target's health bar for each player currently targeting.
+## Author: Kyle Banda
+## Version: 0.0.1
+## RequiredDeps:
+## X-Curse-Project-ID: 999999
+## SavedVariables:
+## SavedVariablesPerCharacter: MyAddonDB
+
+group_priority_targeting.lua
+settings.lua
