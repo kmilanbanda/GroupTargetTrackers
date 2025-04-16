@@ -1,3 +1,5 @@
+MyAddon = MyAddon or {}
+
 if not MyAddonDB then
     MyAddonDB = {}
 end
@@ -24,20 +26,20 @@ mainFrame:SetScript("OnDragStop", function(self)
 end)
 
 mainFrame:SetScript("OnShow", function()
-        PlaySound(808)
+    PlaySound(808)
 end)
 
 mainFrame:SetScript("OnHide", function()
-        PlaySound(808)
+    PlaySound(808)
 end)
 
 SLASH_ADDON1 = "/gpt"
 SLASH_ADDON2 = "/group_priority_targets"
 SlashCmdList["ADDON"] = function()
 	if mainFrame:IsShown() then
-    		mainFrame:Hide()
+    	mainFrame:Hide()
 	else
-    		mainFrame:Show()
+    	mainFrame:Show()
 	end
 end
 
@@ -52,16 +54,16 @@ local eventListenerFrame = CreateFrame("Frame", "MyAddonEventListenerFrame", UIP
 local function eventHandler(self, event, ...)
     local _, eventType = CombatLogGetCurrentEventInfo()
 
-    if event == "COMBAT_LOG_EVENT_UNFILTERED" then
+    if event == "COMBAT_LOG_EVENT_UNFILTERED" and MyAddonDB.settingsKeys.enablePrinting then
         if eventType then
             print(eventType)
         else
             print("No data found!")
         end
-    elseif event == "PLAYER_REGEN_ENABLED" then
-	print("Player exited combat!")
-    elseif event == "PLAYER_REGEN_DISABLED" then
-	print("Player entered combat!")
+    elseif event == "PLAYER_REGEN_ENABLED" and MyAddonDB.settingsKeys.enablePrinting then
+	    print("Player exited combat!")
+    elseif event == "PLAYER_REGEN_DISABLED" and MyAddonDB.settingsKeys.enablePrinting then
+	    print("Player entered combat!")
     end
 end
 
@@ -69,3 +71,11 @@ eventListenerFrame:SetScript("OnEvent", eventHandler)
 eventListenerFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 eventListenerFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
 eventListenerFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
+
+function MyAddon:ToggleMainFrame()
+    if not mainFrame:IsShown() then
+        mainFrame:Show()
+    else
+        mainFrame:Hide()
+    end
+end

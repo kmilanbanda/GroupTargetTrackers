@@ -7,6 +7,11 @@
 ## X-Curse-Project-ID: 999999
 ## SavedVariables:
 ## SavedVariablesPerCharacter: MyAddonDB
+# Libraries
+libs/Ace3/AceAddon-3.0/AceAddon-3.0.lua
+libs/Ace3/AceDB-3.0/AceDB-3.0.lua
+libs/LibDBIcon-1.0/embeds.xml
 
+# Main Files
 group_priority_targeting.lua
 settings.lua
