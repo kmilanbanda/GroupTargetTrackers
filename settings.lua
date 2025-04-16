@@ -3,7 +3,12 @@ local settings = {
     {
         settingText = "Enable event tracking",
         settingKey = "enablePrinting",
-        settingTooltip = "While enabled, events will be printed into the chatbox",
+        settingTooltip = "While enabled, target chanages will be printed to the chatbox",
+    },
+    {
+        settingText = "Enable GUID printing",
+        settingKey = "enableGUIDPrinting",
+        settingTooltip = "While enabled, printed messages will also add GUID tags to all unit IDs"
     },
 }
 
@@ -13,7 +18,7 @@ settingsFrame:SetPoint("CENTER")
 settingsFrame.TitleBg:SetHeight(30)
 settingsFrame.title = settingsFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 settingsFrame.title:SetPoint("CENTER", settingsFrame.TitleBg, "CENTER", 0, -3)
-settingsFrame.title:SetText("MyAddon Settings")
+settingsFrame.title:SetText("Rain Priority Targets Settings")
 settingsFrame:Hide()
 settingsFrame:EnableMouse(true)
 settingsFrame:SetMovable(true)

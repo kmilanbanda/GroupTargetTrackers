@@ -51,26 +51,34 @@ mainFrame.playerName:SetText("Character: " .. UnitName("player"))
 mainFrame.playerName:SetText("Character: " .. UnitName("player") .. " (Level " .. UnitLevel("player") .. ")")
 
 local eventListenerFrame = CreateFrame("Frame", "MyAddonEventListenerFrame", UIParent)
-local function eventHandler(self, event, ...)
-    local _, eventType = CombatLogGetCurrentEventInfo()
+local function eventHandler(self, event, unitID)
+    if event == "UNIT_TARGET" then
+        if MyAddonDB.settingsKeys.enablePrinting then
+            print("Unit: " .. unitID)
+            local unitGUID = UnitGUID(unitID)
 
-    if event == "COMBAT_LOG_EVENT_UNFILTERED" and MyAddonDB.settingsKeys.enablePrinting then
-        if eventType then
-            print(eventType)
-        else
-            print("No data found!")
+            
+            local targetUnit = unitID .. "target"
+            local targetGUID = UnitGUID(targetUnit)
+            if MyAddonDB.settingsKeys.enableGUIDPrinting then
+                if UnitExists(targetUnit) then
+                    print(unitID .. " (" .. unitGUID .. ")" .. "'s new target is: " .. UnitName(targetUnit) .. " (" .. targetGUID .. ")")
+                else
+                    print(unitID .. " (" .. unitGUID .. ")" .. " has no target.")
+                end
+            else
+                if UnitExists(targetUnit) then
+                    print(unitID .. "'s new target is: " .. UnitName(targetUnit))
+                else
+                    print(unitID .. " has no target.")
+                end
+            end
         end
-    elseif event == "PLAYER_REGEN_ENABLED" and MyAddonDB.settingsKeys.enablePrinting then
-	    print("Player exited combat!")
-    elseif event == "PLAYER_REGEN_DISABLED" and MyAddonDB.settingsKeys.enablePrinting then
-	    print("Player entered combat!")
     end
 end
 
 eventListenerFrame:SetScript("OnEvent", eventHandler)
-eventListenerFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-eventListenerFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
-eventListenerFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
+eventListenerFrame:RegisterEvent("UNIT_TARGET")
 
 function MyAddon:ToggleMainFrame()
     if not mainFrame:IsShown() then
