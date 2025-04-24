@@ -1,5 +1,5 @@
 ## Interface: 110100
-## Title: Group Priority Targets
+## Title: Rain Target Trackers
 ## Notes: Draws a dot, circle, pip, icon etc. over a given target's health bar for each player currently targeting.
 ## Author: Kyle Banda
 ## Version: 0.0.1
@@ -13,5 +13,5 @@ libs/Ace3/AceDB-3.0/AceDB-3.0.lua
 libs/LibDBIcon-1.0/embeds.xml
 
 # Main Files
-group_priority_targeting.lua
-settings.lua
+RainTargetTrackers.lua
+Settings.lua

@@ -76,13 +76,13 @@ eventListenerFrame:SetScript("OnEvent", function(self, event)
     end
 end)
 
-local addon = LibStub("AceAddon-3.0"):NewAddon("Group Priority Targeting")
+local addon = LibStub("AceAddon-3.0"):NewAddon("Rain Target Tracking")
 MyAddonMinimapButton = LibStub("LibDBIcon-1.0", true)
 
 local miniButton = LibStub("LibDataBroker-1.1"):NewDataObject("GPT", {
 	type = "data source",
-	text = "Group Priority Targeting",
-	icon = "Interface\\AddOns\\group_priority_targeting\\minimap.tga",
+	text = "Rain Target Tracking",
+	icon = "Interface\\AddOns\\RainTargetTrackers\\minimap.tga",
 	OnClick = function(self, btn)
         if btn == "LeftButton" then
 		    MyAddon:ToggleMainFrame()
@@ -100,12 +100,12 @@ local miniButton = LibStub("LibDataBroker-1.1"):NewDataObject("GPT", {
 			return
 		end
 
-		tooltip:AddLine("GPT\n\nLeft-click: Open GPT\nRight-click: Open GPT Settings", nil, nil, nil, nil)
+		tooltip:AddLine("Rain Target Trackers\n\nLeft-click: Open RTT\nRight-click: Open RTT Settings", nil, nil, nil, nil)
 	end,
 })
 
 function addon:OnInitialize()
-	self.db = LibStub("AceDB-3.0"):New("GPTMinimapPOS", {
+	self.db = LibStub("AceDB-3.0"):New("RTTMinimapPOS", {
 		profile = {
 			minimap = {
 				hide = false,
@@ -113,7 +113,7 @@ function addon:OnInitialize()
 		},
 	})
 
-	MyAddonMinimapButton:Register("GPT", miniButton, self.db.profile.minimap)
+	MyAddonMinimapButton:Register("RTT", miniButton, self.db.profile.minimap)
 end
 
-MyAddonMinimapButton:Show("GPT")
+MyAddonMinimapButton:Show("RTT")
