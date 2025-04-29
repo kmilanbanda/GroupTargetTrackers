@@ -3,7 +3,7 @@ local settings = {
     {
         settingText = "Enable event tracking",
         settingKey = "enablePrinting",
-        settingTooltip = "While enabled, target chanages will be printed to the chatbox",
+        settingTooltip = "While enabled, target changes will be printed to the chatbox",
     },
     {
         settingText = "Enable GUID printing",
