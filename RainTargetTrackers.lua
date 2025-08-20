@@ -92,6 +92,7 @@ end
 function UpdateCircle(texture, unit)
     local targetNamePlate = C_NamePlate.GetNamePlateForUnit(unit .. "target")
     if UnitExists(unit .. "target") then
+	--adjusting counter for number of tokens on target
         if not countsOnTargets[targetNamePlate] then
             countsOnTargets[targetNamePlate] = 1
         else
@@ -106,7 +107,6 @@ function UpdateCircle(texture, unit)
         currentTargets[unit] = targetNamePlate
 
         if targetNamePlate and texture then
-
             print("updating texture")
             texture:Hide()
             texture:SetParent(targetNamePlate.UnitFrame)
@@ -135,10 +135,47 @@ function UpdateCircle(texture, unit)
     end
 end
 
+local partyPattern = "^party%d+$"
+local raidPattern = "^raid%d+$"
+
+local function IsEligibleUnit(unitID)
+    if not unitID or type(unitID) ~= "string" then
+	return false
+    end
+    return string.match(unitID, partyPattern) or string.match(unitID, raidPattern) or unitID == "player"
+end
+
+local function PrintTargetChanges(unitID)
+    print("Unit: " .. unitID)
+
+    local targetUnit = unitID .. "target"
+    
+    if MyAddonDB.settingsKeys.enableGUIDPrinting then
+        local unitGUID = UnitGUID(unitID)
+        local targetGUID = UnitGUID(targetUnit)
+        if UnitExists(targetUnit) then
+            print(unitID .. " (" .. unitGUID .. ")" .. "'s new target is: " .. UnitName(targetUnit) .. " (" .. targetGUID .. ")")
+        else
+            print(unitID .. " (" .. unitGUID .. ")" .. " has no target.")
+        end
+    else
+        if UnitExists(targetUnit) then
+            print(unitID .. "'s new target is: " .. UnitName(targetUnit))
+        else
+            print(unitID .. " has no target.")
+        end
+    end
+
+end
+
+local function IsUnitsTarget(unitID, targetID)
+    return UnitGUID(unitID) == UnitGUID(targetID)
+end
+
 local eventListenerFrame = CreateFrame("Frame", "MyAddonEventListenerFrame", UIParent)
 local function eventHandler(self, event, unitID)
     if event == "UNIT_TARGET" then
-        if UnitInParty(unitID) then
+        if IsEligibleUnit(unitID) then
             if not circleTextures[unitID] then
                 print("Creating circle for " .. unitID)
                 CreateCircle(unitID)
@@ -146,44 +183,28 @@ local function eventHandler(self, event, unitID)
             UpdateCircle(circleTextures[unitID], unitID)
         end
 
-
         if MyAddonDB.settingsKeys.enablePrinting then
-            print("Unit: " .. unitID)
-
-            local targetUnit = unitID .. "target"
-            
-            if MyAddonDB.settingsKeys.enableGUIDPrinting then
-                local unitGUID = UnitGUID(unitID)
-                local targetGUID = UnitGUID(targetUnit)
-                if UnitExists(targetUnit) then
-                    print(unitID .. " (" .. unitGUID .. ")" .. "'s new target is: " .. UnitName(targetUnit) .. " (" .. targetGUID .. ")")
-                else
-                    print(unitID .. " (" .. unitGUID .. ")" .. " has no target.")
-                end
-            else
-                if UnitExists(targetUnit) then
-                    print(unitID .. "'s new target is: " .. UnitName(targetUnit))
-                else
-                    print(unitID .. " has no target.")
-                end
-            end
-        end
+            PrintTargetChanges(unitID)
+	end
     elseif event == "NAME_PLATE_UNIT_REMOVED" then
         --print("NAME_PLATE_UNIT_REMOVED: " .. unitID)
         for unit, texture in pairs(circleTextures) do
-            local targetUnit = unit .. "target"
-            if UnitGUID(unitID) == UnitGUID(targetUnit) then
+            local targetID = unit .. "target"
+            if IsUnitsTarget(unitID, targetID) then
                 texture:Hide()
+		--print("unitID GUID: " .. UnitGUID(unitID) .. " targetID GUID: " .. UnitGUID(targetID))
                 print("Hiding texture for " .. unitID .. " due to nameplate removal")
             end
         end
     elseif event == "NAME_PLATE_UNIT_ADDED" then
         --print("NAME_PLATE_UNIT_ADDED: " .. unitID)
         for unit, texture in pairs(circleTextures) do
-            local targetUnit = unit .. "target"
-            if UnitGUID(unitID) == UnitGUID(targetUnit) then
+            local targetID = unit .. "target"
+            if IsUnitsTarget(unitID, targetID) then
+		UpdateCircle(texture, unit)
                 texture:Show()
-                print("Showing texture for " .. unitID .. " due to nameplate addition")
+		--print("unitID GUID: " .. UnitGUID(unitID) .. " targetID GUID: " .. UnitGUID(targetID))
+                print("Updating texture for " .. unit .. " due to nameplate addition")
             end
         end
     end
