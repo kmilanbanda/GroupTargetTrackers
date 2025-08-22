@@ -54,8 +54,10 @@ mainFrame.playerName:SetText("Character: " .. UnitName("player"))
 mainFrame.playerName:SetText("Character: " .. UnitName("player") .. " (Level " .. UnitLevel("player") .. ")")
 
 local circleTextures = {}
-local countsOnTargets = {}
+local targetCounts = {}
 local currentTargets = {}
+
+local UpdateInterval = 0.2
 
 function CreateCircle(unitID)
     if not unitID then
@@ -89,47 +91,68 @@ function CreateCircle(unitID)
     circleTextures[unitID] = texture
 end
 
-function UpdateCircle(texture, unit)
-    local targetNamePlate = C_NamePlate.GetNamePlateForUnit(unit .. "target")
-    if UnitExists(unit .. "target") then
-	--adjusting counter for number of tokens on target
-        if not countsOnTargets[targetNamePlate] then
-            countsOnTargets[targetNamePlate] = 1
-        else
-            countsOnTargets[targetNamePlate] = countsOnTargets[targetNamePlate] + 1
-        end
-        if currentTargets[unit] then
-            countsOnTargets[targetNamePlate] = countsOnTargets[targetNamePlate] - 1
-            if countsOnTargets[targetNamePlate] < 0 then
-                countsOnTargets[targetNamePlate] = 0
-            end
-        end
-        currentTargets[unit] = targetNamePlate
+function CreateTargetCount(targetNamePlate) --use GUID as key instead?
+	targetCounts[targetNamePlate] = 0
+end
 
-        if targetNamePlate and texture then
-            print("updating texture")
-            texture:Hide()
-            texture:SetParent(targetNamePlate.UnitFrame)
-            local circleOffset = (countsOnTargets[targetNamePlate] - 1) * 20
-            texture:SetPoint("CENTER", targetNamePlate, "CENTER", -60 + circleOffset, 20)
-            texture:Show()
-            print("texture showing")
-        else
-            if not targetNamePlate then
-                print("target nameplate not found for " .. unit .. "target")
+function IncTargetCount(targetNamePlate)
+	targetCounts[targetNamePlate] = targetCounts[targetNamePlate] + 1
+end
+
+function DecTargetCount(targetNamePlate)
+	targetCounts[targetNamePlate] = targetCounts[targetNamePlate] - 1
+	if targetCounts[targetNamePlate] < 0 then
+		targetCounts[targetNamePlate] = 0
+	end
+end
+
+function ResetTargetCount(targetNamePlate)
+	targetCounts[targetNamePlate] = 0
+end
+
+function UpdateCountsOnTargets(targetNamePlate)
+	--loop through all eligible units targets and correct the counters?	
+end
+
+function UpdateTexture(targetNamePlate, texture) -- must replace magic numbers at some point with actual user options
+    --print("updating texture")
+    texture:Hide()
+    texture:SetParent(targetNamePlate.UnitFrame)
+    local circleOffset = (targetCounts[targetNamePlate] - 1) * 20
+    texture:SetPoint("CENTER", targetNamePlate, "CENTER", -60 + circleOffset, 20)
+    texture:Show()
+    --print("texture showing")
+end
+
+function UnitHasTarget(unit)
+	return UnitExists(unit .. "target")
+end
+
+function UpdateCircle(unit)
+    texture = circleTextures[unit]
+    if UnitHasTarget(unit) then
+        local targetNamePlate = C_NamePlate.GetNamePlateForUnit(unit .. "target")
+        if targetNamePlate then
+            if not targetCounts[targetNamePlate] then
+                CreateTargetCount(targetNamePlate) 
             end
-            if not texture then
-                print("texture not found")
+            if currentTargets[unit] then 
+                if not currentTargets[unit] == targetNamePlate then
+                    currentTargets[unit] = targetNamePlate
+                end
+            end
+            currentTargets[unit] = targetNamePlate
+            IncTargetCount(currentTargets[unit])
+
+            if texture then
+                UpdateTexture(targetNamePlate, texture)    
+            else
+                print("~Error: texture not found")
             end
         end
     else
         if currentTargets[unit] then
-            local oldNameplate = currentTargets[unit]
-            countsOnTargets[oldNameplate] = countsOnTargets[oldNameplate] - 1
-            if countsOnTargets[oldNameplate] < 0 then
-                countsOnTargets[oldNameplate] = 0
-            end
-            currentTargets[unit] = nil
+			currentTargets[unit] = nil
         end
         texture:Hide()
     end
@@ -165,7 +188,6 @@ local function PrintTargetChanges(unitID)
             print(unitID .. " has no target.")
         end
     end
-
 end
 
 local function IsUnitsTarget(unitID, targetID)
@@ -175,40 +197,70 @@ end
 local eventListenerFrame = CreateFrame("Frame", "MyAddonEventListenerFrame", UIParent)
 local function eventHandler(self, event, unitID)
     if event == "UNIT_TARGET" then
-        if IsEligibleUnit(unitID) then
-            if not circleTextures[unitID] then
-                print("Creating circle for " .. unitID)
-                CreateCircle(unitID)
-            end
-            UpdateCircle(circleTextures[unitID], unitID)
-        end
-
-        if MyAddonDB.settingsKeys.enablePrinting then
-            PrintTargetChanges(unitID)
-	end
+--        if IsEligibleUnit(unitID) then
+--            if not circleTextures[unitID] then
+--                print("Creating circle for " .. unitID)
+--                CreateCircle(unitID)
+--            end
+--            UpdateCircle(unitID)
+--
+--            if MyAddonDB.settingsKeys.enablePrinting then
+--                PrintTargetChanges(unitID)
+--	        end
+--        end
+--
     elseif event == "NAME_PLATE_UNIT_REMOVED" then
-        --print("NAME_PLATE_UNIT_REMOVED: " .. unitID)
         for unit, texture in pairs(circleTextures) do
             local targetID = unit .. "target"
             if IsUnitsTarget(unitID, targetID) then
-                texture:Hide()
-		--print("unitID GUID: " .. UnitGUID(unitID) .. " targetID GUID: " .. UnitGUID(targetID))
-                print("Hiding texture for " .. unitID .. " due to nameplate removal")
+                --reset target count to zero
+                --targetNamePlate = currentTarget[unit]
+                --ResetTargetCount(targetNamePlate)
+                --texture:Hide()
             end
         end
     elseif event == "NAME_PLATE_UNIT_ADDED" then
-        --print("NAME_PLATE_UNIT_ADDED: " .. unitID)
         for unit, texture in pairs(circleTextures) do
             local targetID = unit .. "target"
             if IsUnitsTarget(unitID, targetID) then
-		UpdateCircle(texture, unit)
-                texture:Show()
-		--print("unitID GUID: " .. UnitGUID(unitID) .. " targetID GUID: " .. UnitGUID(targetID))
-                print("Updating texture for " .. unit .. " due to nameplate addition")
+                --ResetTargetCount(currentTarget[unit])
+				--UpdateCircle(texture, unit)
+                --texture:Show()
             end
         end
     end
 end
+
+local function GetGroupType()
+    if UnitInRaid("player") then
+        return "raid"
+    else
+        return "party"
+    end
+end
+
+function Update()
+    groupType = GetGroupType()
+    unitID = "player"
+    if not circleTextures[unitID] then
+        CreateCircle(unitID)
+    end
+    UpdateCircle(unitID)
+    for i = 1, 30, 1
+    do
+        unitID = groupType .. i
+        if not UnitExists(unitID) then break end
+        if not circleTextures[unitID] then
+            CreateCircle(unitID)
+        end
+        UpdateCircle(unitID)
+    end
+
+    for target, count in pairs(targetCounts) do
+        ResetTargetCount(target)
+    end
+end
+local ticker = C_Timer.NewTicker(UpdateInterval, Update)
 
 eventListenerFrame:SetScript("OnEvent", eventHandler)
 eventListenerFrame:RegisterEvent("UNIT_TARGET")
