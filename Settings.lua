@@ -204,16 +204,12 @@ local miniButton = LibStub("LibDataBroker-1.1"):NewDataObject("GPT", {
 	text = "Rain Target Tracking",
 	icon = "Interface\\AddOns\\RainTargetTrackers\\minimap.tga",
 	OnClick = function(self, btn)
-        if btn == "LeftButton" then
-		    MyAddon:ToggleMainFrame()
-        elseif btn == "RightButton" then
-            if settingsFrame:IsShown() then
-                settingsFrame:Hide()
-            else
-                settingsFrame:Show()
-            end
+        if settingsFrame:IsShown() then
+            settingsFrame:Hide()
+        else
+            settingsFrame:Show()
         end
-	end,
+    end,
 
 	OnTooltipShow = function(tooltip)
 		if not tooltip or not tooltip.AddLine then

@@ -14,10 +14,14 @@ if not MyAddonDB.loadCount then
 end
 MyAddonDB.loadCount = MyAddonDB.loadCount + 1
 
-local Plater = _G["Plater"]
-if Plater then
-    print("Plater API accessed successfully!")
+local function InitializePlaterAPIAccess()
+    Plater = _G["Plater"]
+    if Plater then
+        print("Plater API accessed successfully!")
+    end
+    return Plater
 end
+local Plater = InitializePlaterAPIAccess()
 
 SLASH_DUMP1 = "/refresh"
 SlashCmdList["DUMP"] = function()
@@ -45,7 +49,7 @@ local function GetAtlas(unitID)
     return atlas
 end
 
-function CreateCircle(unitID)
+local function CreateToken(unitID)
     if not unitID then
         return
     end
@@ -68,7 +72,7 @@ function CreateCircle(unitID)
     circleTextures[unitID] = texture
 end
 
-function RefreshToken(unitID)
+local function RefreshToken(unitID)
     texture = circleTextures[unitID]
 
     texture:SetTexture("Interface\\LFGFrame\\UI-LFG-ICON-ROLES")
@@ -82,32 +86,38 @@ function RefreshToken(unitID)
     end
 end
 
-function RefreshTokens()
+local function RefreshTokens()
     for unit, _ in pairs(circleTextures) do
         RefreshToken(unit)
     end
 end
 
-function CreateTargetCount(targetNamePlate) 
+local function CreateTargetCount(targetNamePlate) 
 	targetCounts[targetNamePlate] = 0
 end
 
-function IncTargetCount(targetNamePlate)
+local function IncTargetCount(targetNamePlate)
 	targetCounts[targetNamePlate] = targetCounts[targetNamePlate] + 1
 end
 
-function DecTargetCount(targetNamePlate)
+local function DecTargetCount(targetNamePlate)
 	targetCounts[targetNamePlate] = targetCounts[targetNamePlate] - 1
 	if targetCounts[targetNamePlate] < 0 then
 		targetCounts[targetNamePlate] = 0
 	end
 end
 
-function ResetTargetCount(targetNamePlate)
+local function ResetTargetCount(targetNamePlate)
 	targetCounts[targetNamePlate] = 0
 end
 
-function UpdateTexture(targetNamePlate, texture)
+local function ResetTargetCounts()
+    for target, _ in pairs(targetCounts) do
+        ResetTargetCount(target)
+    end
+end
+
+local function UpdateTexture(targetNamePlate, texture)
     texture:Hide()
     texture:SetParent(targetNamePlate.UnitFrame)
     if Plater then texture:SetParent(targetNamePlate.unitFrame) end
@@ -123,13 +133,16 @@ function UnitHasTarget(unit)
 	return UnitExists(unit .. "target")
 end
 
-function UpdateCircle(unit)
+local function UpdateToken(unit)
     local texture = circleTextures[unit]
     if UnitHasTarget(unit) then
         local targetNamePlate = C_NamePlate.GetNamePlateForUnit(unit .. "target")
         if Plater then
             local plates = Plater.GetAllShownPlates()
             for _, plate in pairs(plates) do
+               if not plate.unitFrame.unit then
+                   break
+               end
                if UnitGUID(unit .. "target") == UnitGUID(plate.unitFrame.unit) then
                    targetNamePlate = plate
                end
@@ -194,7 +207,7 @@ function OnMenuClosed(frame)
     RefreshTokens()    
 end
 
-local function GetGroupType()
+function GetGroupType()
     if UnitInRaid("player") then
         return "raid"
     else
@@ -202,33 +215,40 @@ local function GetGroupType()
     end
 end
 
-function Update()
-    groupType = GetGroupType()
+local function ResetTargetCounts()
+    for target, _ in pairs(targetCounts) do
+        ResetTargetCount(target)
+    end
+end
+
+local function UpdatePlayer()
     unitID = "player"
     if not circleTextures[unitID] then
-        CreateCircle(unitID)
+        CreateToken(unitID)
     end
-    UpdateCircle(unitID)
+    UpdateToken(unitID)
+end
+
+local function UpdateGroup(groupType)
+    groupType = GetGroupType()
     for i = 1, 30, 1
     do
         unitID = groupType .. i
         if not UnitExists(unitID) then break end
         if not circleTextures[unitID] then
-            CreateCircle(unitID)
+            CreateToken(unitID)
         end
-        UpdateCircle(unitID)
-    end
-
-    for target, count in pairs(targetCounts) do
-        ResetTargetCount(target)
+        UpdateToken(unitID)
     end
 end
-ticker = C_Timer.NewTicker(updateInterval, Update)
 
-function MyAddon:ToggleMainFrame()
-    if not mainFrame:IsShown() then
-        mainFrame:Show()
-    else
-        mainFrame:Hide()
-    end
+function InitializeUpdateLoop()
+    return C_Timer.NewTicker(updateInterval, Update)
 end
+
+function Update()
+    UpdatePlayer()
+    UpdateGroup()
+    ResetTargetCounts()
+end
+ticker = InitializeUpdateLoop()
