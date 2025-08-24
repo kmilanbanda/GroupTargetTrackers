@@ -14,6 +14,6 @@ Rain Target Trackers is a World of Warcraft addon designed to aid target coordin
  - Fully customizable tokens (class colors instead of roles, different shapes, different positioning, etc.)
  - Additional tokens for focus targets
 
-## Additiional Notes
+## Additional Notes
 
 This addon is pretty barebones right now, but it gets its main function done, which is to make clear which adds are being targeted by your party.
