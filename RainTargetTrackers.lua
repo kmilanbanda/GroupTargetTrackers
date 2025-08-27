@@ -252,8 +252,8 @@ function InitializeUpdateLoop()
 end
 
 function Update()
-    UpdatePlayer()
     UpdateGroup()
+    if MyAddonDB.settingsKeys["displayPlayerToken"] then UpdatePlayer() end
     ResetTargetCounts()
 end
 ticker = InitializeUpdateLoop()

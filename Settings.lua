@@ -3,13 +3,13 @@ MyAddonDB.tokenSize = MyAddonDB.tokenSize or 20
 
 local settingsHeight = 1
 local settings = {
-    displayPlayerToken = {
+    {
        settingText = "Display Player Token",
        settingTooltip = "While enabled, a token for the player will be generated",
        settingType = "checkbox",
        settingKey = "displayPlayerToken",
     },
-    updateInterval = {
+    {
         settingText = "Update Interval",
         settingTooltip = "Configure the amount of time between updates. A lower value means more frequent updates",
         settingType = "slider",
@@ -21,7 +21,7 @@ local settings = {
         settingKey = "updateInterval",
         settingDefault = 0.2
     },
-    tokenSize = {
+    {
         settingText = "Token Size",
         settingTooltip = "Configure the size of the tokens displayed on enemy nameplates",
         settingType = "slider",
@@ -33,25 +33,7 @@ local settings = {
         settingKey = "tokenSize",
         settingDefault = 20
     },
-    xOffset = {
-        settingText = "X-Offset",
-        settingTooltip = "Configure the initial X-offset of the tokens",
-        settingType = "editbox",
-        settingWidth = 40,
-        settingHeight = 20,
-        settingValue = MyAddonDB.xOffset or 0,
-        settingKey = "xOffset",
-    },
-    yOffset = {
-        settingText = "Y-Offset",
-        settingTooltip = "Configure the initial Y-offset of the tokens",
-        settingType = "editbox",
-        settingWidth = 40,
-        settingHeight = 20,
-        settingValue = MyAddonDB.yOffset or 0,
-        settingKey = "yOffset",
-    },
-    tokensPerRow = {
+    {
         settingText = "Tokens per row",
         settingTooltip = "Configure the number of tokens per row",
         settingType = "slider",
@@ -61,6 +43,24 @@ local settings = {
         settingDecimals = 0,
         settingStep = 1,
         settingKey = "tokensPerRow",
+    },
+    {
+        settingText = "X-Offset",
+        settingTooltip = "Configure the initial X-offset of the tokens",
+        settingType = "editbox",
+        settingWidth = 40,
+        settingHeight = 20,
+        settingValue = MyAddonDB.xOffset or 0,
+        settingKey = "xOffset",
+    },
+    {
+        settingText = "Y-Offset",
+        settingTooltip = "Configure the initial Y-offset of the tokens",
+        settingType = "editbox",
+        settingWidth = 40,
+        settingHeight = 20,
+        settingValue = MyAddonDB.yOffset or 0,
+        settingKey = "yOffset",
     },
 }
 
@@ -135,7 +135,7 @@ end
 local function CreateLabelForBox(editBox)
     local label = editBox:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     label:SetPoint("BOTTOMLEFT", editBox, "TOPLEFT", 0, 4)
-    label:SetText("Enter " .. settings[editBox.key].settingText .. ": ")
+    label:SetText("Enter " .. settings[editBox.index].settingText .. ": ")
 end
 
 local function RestrictEditBoxInput(editBox)
@@ -161,16 +161,17 @@ end
 
 --- Edit Box Helper Functions ---|
 
-local function CreateEditBox(editBoxText, key, tooltip)
+local function CreateEditBox(editBoxText, key, tooltip, width, height, maxChars, index)
     local editBox = CreateFrame("EditBox",  "MyAddonEditBoxID" .. settingsHeight, settingsFrame, "InputBoxTemplate")
     editBox.key = key
+    editBox.index = index
     
     SetEditBoxProperties(editBox, width, height, maxChars)
     CreateLabelForBox(editBox)
     RestrictEditBoxInput(editBox)
     ValidateAndSaveEditBoxInput(editBox)
 
-    settingsHeight = settingsHeight + 1
+    settingsHeight = settingsHeight + 1.5
     return editBox
 end
 
@@ -183,7 +184,7 @@ local function SetSliderProperties(slider, min, max, value)
     slider:SetWidth(sliderWidth)
     slider:SetHeight(sliderHeight)
     slider:SetMinMaxValues(min, max)
-    slider:SetValueStep(settings[slider.key].settingStep)
+    slider:SetValueStep(settings[slider.index].settingStep)
     slider:SetValue(value) 
 end
 
@@ -216,11 +217,12 @@ end
 
 --- Slider Helper Functions ---|
 
-local function CreateSlider(sliderText, key, tooltip, min, max)
+local function CreateSlider(sliderText, key, tooltip, min, max, index)
     local slider = CreateFrame("Slider", "MyAddonSlider" .. sliderText, settingsFrame, "OptionsSliderTemplate")
     slider.Text:SetText(sliderText)
     slider:SetPoint("CENTER", settingsFrame, "TOP", 0, -30 + (settingsHeight * -30))
     slider.key = key
+    slider.index = index
 
     if MyAddonDB.settingsKeys[key] == nil then
         MyAddonDB.settingsKeys[key] = true
@@ -235,7 +237,7 @@ local function CreateSlider(sliderText, key, tooltip, min, max)
     return slider
 end
 
-local function CreateCheckbox(checkboxText, key, checkboxTooltip)
+local function CreateCheckbox(checkboxText, key, checkboxTooltip, index)
     local checkbox = CreateFrame("CheckButton", "MyAddonCheckboxID" .. settingsHeight, settingsFrame, "UICheckButtonTemplate")
     checkbox.Text:SetText(checkboxText)
     checkbox:SetPoint("TOPLEFT", settingsFrame, "TOPLEFT", 10, -30 + (settingsHeight * -30))
@@ -273,13 +275,13 @@ eventListenerFrame:SetScript("OnEvent", function(self, event)
             MyAddonDB.settingsKeys = {}
         end
 
-        for _, setting in pairs(settings) do
+        for index, setting in pairs(settings) do
             if setting.settingType == "checkbox" then
-                CreateCheckbox(setting.settingText, setting.settingKey, setting.settingTooltip)
+                CreateCheckbox(setting.settingText, setting.settingKey, setting.settingTooltip, index)
             elseif setting.settingType == "slider" then
-                CreateSlider(setting.settingText, setting.settingKey, setting.settingTooltip, setting.settingMin, setting.settingMax)
+                CreateSlider(setting.settingText, setting.settingKey, setting.settingTooltip, setting.settingMin, setting.settingMax, index)
             elseif setting.settingType == "editbox" or setting.settingType == "editBox" then
-                CreateEditBox(setting.settingText, setting.settingKey, setting.settingTooltip, setting.settingWidth, setting.settingHeight, setting.settingMaxChars)
+                CreateEditBox(setting.settingText, setting.settingKey, setting.settingTooltip, setting.settingWidth, setting.settingHeight, setting.settingMaxChars, index)
             else
                 print("Rain Target Trackers: invalid setting type")
             end
