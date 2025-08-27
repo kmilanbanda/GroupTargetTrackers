@@ -1,17 +1,14 @@
-MyAddonDB = MyAddonDB or {}
-MyAddon.callbacks = MyAddon.callbacks or {}
-
 MyAddonDB.updateInterval = MyAddonDB.updateInterval or 0.2
 MyAddonDB.tokenSize = MyAddonDB.tokenSize or 20
 
 local settingsHeight = 1
 local settings = {
---    enablePrinting = {
---       settingText = "Enable event tracking",
---       settingTooltip = "While enabled, target changes will be printed to the chatbox",
---       settingType = "checkbox",
---       settingKey = "enablePrinting",
---    },
+    displayPlayerToken = {
+       settingText = "Display Player Token",
+       settingTooltip = "While enabled, a token for the player will be generated",
+       settingType = "checkbox",
+       settingKey = "displayPlayerToken",
+    },
     updateInterval = {
         settingText = "Update Interval",
         settingTooltip = "Configure the amount of time between updates. A lower value means more frequent updates",
@@ -36,6 +33,25 @@ local settings = {
         settingKey = "tokenSize",
         settingDefault = 20
     },
+    xOffset = {
+        settingText = "X-Offset",
+        settingTooltip = "Configure the initial X-offset of the tokens",
+        settingType = "editbox",
+        settingWidth = 40,
+        settingHeight = 20,
+        settingValue = MyAddonDB.xOffset or 0,
+        settingKey = "xOffset",
+    },
+    yOffset = {
+        settingText = "Y-Offset",
+        settingTooltip = "Configure the initial Y-offset of the tokens",
+        settingType = "editbox",
+        settingWidth = 40,
+        settingHeight = 20,
+        settingValue = MyAddonDB.yOffset or 0,
+        settingKey = "yOffset",
+    },
+    
 }
 
 MENU_CLOSED = MENU_CLOSED or "MENU_CLOSED"
@@ -89,10 +105,71 @@ end)
 
 MyAddon:RegisterCallback(MENU_CLOSED, OnMenuClosed)
 
+--- Edit Box Helper Functions ---
+
+local defaultWidth = 40
+local defaultHeight = 20
+local defaultMaxLetters = 10
+
+local function SetEditBoxProperties(editBox, width, height, maxChars)
+    editBox:SetPoint("TOPLEFT", settingsFrame, "TOPLEFT", 0, -30 + (settingsHeight * -30))
+    if not width then width = defaultWidth end
+    if not height then height = defaultHeight end
+    if not maxLetters then maxLetters = defaultMaxLetters end
+    editBox:SetSize(width, height)
+    editBox:SetAutoFocus(false)
+    editBox:SetMaxLetters(maxLetters)
+    editBox:SetFontObject("GameFontHighlight")
+end
+
+local function CreateLabelForBox(editBox)
+    local label = editBox:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    label:SetPoint("BOTTOMLEFT", editBox, "TOPLEFT", 0, 4)
+    label:SetText("Enter " .. settings[editBox.key].settingText .. ": ")
+end
+
+local function RestrictEditBoxInput(editBox)
+    editBox:SetScript("OnChar", function(self, char)
+        if not char:match("[0-9]") and not char:match("-") then
+            return
+        end
+    end)
+end
+
+local function ValidateAndSaveEditBoxInput(editBox)
+    editBox:SetScript("OnEnterPressed", function(self)
+        local input = self:GetText()
+        if input:match("^-?[0-9]+$") then
+            MyAddonDB[editBox.key] = input
+            self:ClearFocus()
+        else
+            self:SetText(MyAddonDB[editBox.key])
+            self:ClearFocus()
+        end
+    end)
+end
+
+--- Edit Box Helper Functions ---|
+
+local function CreateEditBox(editBoxText, key, tooltip)
+    local editBox = CreateFrame("EditBox",  "MyAddonEditBoxID" .. settingsHeight, settingsFrame, "InputBoxTemplate")
+    editBox.key = key
+    
+    SetEditBoxProperties(editBox, width, height, maxChars)
+    CreateLabelForBox(editBox)
+    RestrictEditBoxInput(editBox)
+    ValidateAndSaveEditBoxInput(editBox)
+
+    settingsHeight = settingsHeight + 1
+    return editBox
+end
+
+--- Slider Helper Functions ---
+
 local sliderWidth = 200
 local sliderHeight = 20
 
-local function setSliderProperties(slider, min, max, value)
+local function SetSliderProperties(slider, min, max, value)
     slider:SetWidth(sliderWidth)
     slider:SetHeight(sliderHeight)
     slider:SetMinMaxValues(min, max)
@@ -100,7 +177,7 @@ local function setSliderProperties(slider, min, max, value)
     slider:SetValue(value) 
 end
 
-local function addSliderText(slider, min, max, value)
+local function AddSliderText(slider, min, max, value)
     slider.label = slider:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     slider.label:SetPoint("TOP", slider, "BOTTOM", 0, -5)
     slider.label:SetText("Adjust Value: " .. format("%.1f", value))
@@ -119,13 +196,15 @@ function round(number, decimals)
     return math.floor(number * multiplier + 0.5) / multiplier
 end
 
-local function handleSliderValueChanges(slider)
+local function HandleSliderValueChanges(slider)
     slider:SetScript("OnValueChanged", function(self, value)
         local roundedValue = round(value, settings[slider.key].settingDecimals) 
         MyAddonDB[slider.key] = roundedValue
         slider.label:SetText("Adjust Value: " .. format("%.1f", roundedValue))
     end)
 end
+
+--- Slider Helper Functions ---|
 
 local function CreateSlider(sliderText, key, tooltip, min, max)
     local slider = CreateFrame("Slider", "MyAddonSlider" .. sliderText, settingsFrame, "OptionsSliderTemplate")
@@ -138,9 +217,9 @@ local function CreateSlider(sliderText, key, tooltip, min, max)
     end
     
     value = MyAddonDB[key] or settings[key].settingDefault
-    setSliderProperties(slider, min, max, value)
-    addSliderText(slider, min, max, value)
-    handleSliderValueChanges(slider)
+    SetSliderProperties(slider, min, max, value)
+    AddSliderText(slider, min, max, value)
+    HandleSliderValueChanges(slider)
     
     settingsHeight = settingsHeight + 2.5
     return slider
@@ -189,6 +268,8 @@ eventListenerFrame:SetScript("OnEvent", function(self, event)
                 CreateCheckbox(setting.settingText, setting.settingKey, setting.settingTooltip)
             elseif setting.settingType == "slider" then
                 CreateSlider(setting.settingText, setting.settingKey, setting.settingTooltip, setting.settingMin, setting.settingMax)
+            elseif setting.settingType == "editbox" or setting.settingType == "editBox" then
+                CreateEditBox(setting.settingText, setting.settingKey, setting.settingTooltip, setting.settingWidth, setting.settingHeight, setting.settingMaxChars)
             else
                 print("Rain Target Trackers: invalid setting type")
             end
