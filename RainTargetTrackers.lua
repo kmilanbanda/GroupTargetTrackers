@@ -5,9 +5,6 @@ if not MyAddonDB then
     MyAddonDB = {}
 end
 
-MyAddonDB.updateInterval = MyAddonDB.updateInterval or 0.2
-MyAddonDB.tokenSize = MyAddonDB.tokenSize or 20
-
 print("Rain Target Trackers successfully loaded!")
 if not MyAddonDB.loadCount then
     MyAddonDB.loadCount = 0
@@ -31,9 +28,6 @@ end
 local circleTextures = {}
 local targetCounts = {}
 local currentTargets = {}
-
-local updateInterval = MyAddonDB.updateInterval or 0.2
-local tokenSize = MyAddonDB.tokenSize or 16
 
 local function GetAtlas(unitID)
     local role = UnitGroupRolesAssigned(unitID)
@@ -121,11 +115,12 @@ local function UpdateTexture(targetNamePlate, texture)
     texture:Hide()
     texture:SetParent(targetNamePlate.UnitFrame)
     if Plater then texture:SetParent(targetNamePlate.unitFrame) end
-    local circleOffsetMultiplier = MyAddonDB.tokenSize / 16
-    local circleOffset = (targetCounts[targetNamePlate] - 1) * 20 * circleOffsetMultiplier
-    local yOffset = 20
-    if Plater then  yOffset = yOffset + 10 end
-    texture:SetPoint("CENTER", targetNamePlate, "CENTER", -60 + circleOffset, yOffset)
+    local tokenScaleMultiplier = MyAddonDB.tokenSize / 16
+    local rowPosition = (targetCounts[targetNamePlate] - 1) % MyAddonDB.tokensPerRow
+    local targetCountOffset = (rowPosition - 1) * 20 * tokenScaleMultiplier
+    local rowCount = math.ceil(targetCounts[targetNamePlate]/MyAddonDB.tokensPerRow) 
+    local rowCountOffset = (rowCount - 1) * 20 * tokenScaleMultiplier
+    texture:SetPoint(MyAddonDB.anchor, targetNamePlate, MyAddonDB.anchor, MyAddonDB.xOffset + targetCountOffset, MyAddonDB.yOffset + rowCountOffset)
     texture:Show()
 end
 
@@ -189,21 +184,30 @@ local function IsUnitsTarget(unitID, targetID)
 end
 
 local eventListenerFrame = CreateFrame("Frame", "MyAddonEventListenerFrame", UIParent)
+eventListenerFrame:RegisterEvent("ADDON_LOADED")
 eventListenerFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 eventListenerFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 eventListenerFrame:RegisterEvent("GROUP_JOINED")
-local function eventHandler(self, event)
+local function eventHandler(self, event, arg1)
     if event == "PLAYER_ENTERING_WORLD" or event == "GROUP_ROSTER_UPDATE" then
         RefreshTokens()
+    elseif event == "ADDON_LOADED" and arg1 == "RainTargetTrackers" then 
+        MyAddonDB.updateInterval = MyAddonDB.updateInterval or 0.2
+        MyAddonDB.tokenSize = MyAddonDB.tokenSize or 16
+        MyAddonDB.tokensPerRow = MyAddonDB.tokensPerRow or 5
+        MyAddonDB.xOffset = MyAddonDB.xOffset or 0
+        MyAddonDB.yOffset = MyAddonDB.yOffset or 0
+        MyAddonDB.rowSpacing = MyAddonDB.rowSpacing or 20
+        MyAddonDB.columnSpacing = MyAddonDB.columnSpacing or 20
+        MyAddonDB.anchor = MyAddonDB.anchor or "TOPLEFT"
     end
 end
 
 eventListenerFrame:SetScript("OnEvent", eventHandler)
 
 function OnMenuClosed(frame)
-    updateInterval = MyAddonDB.updateInterval
-    ticker:Cancel()
-    ticker = C_Timer.NewTicker(updateInterval, Update)
+    if ticker then ticker:Cancel() end
+    ticker = C_Timer.NewTicker(MyAddonDB.updateInterval, Update)
     RefreshTokens()    
 end
 
@@ -243,12 +247,13 @@ local function UpdateGroup(groupType)
 end
 
 function InitializeUpdateLoop()
+    local updateInterval = MyAddonDB.updateInterval or 0.2
     return C_Timer.NewTicker(updateInterval, Update)
 end
 
 function Update()
-    UpdatePlayer()
     UpdateGroup()
+    if MyAddonDB.settingsKeys["displayPlayerToken"] then UpdatePlayer() end
     ResetTargetCounts()
 end
 ticker = InitializeUpdateLoop()
