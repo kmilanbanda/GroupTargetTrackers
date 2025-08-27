@@ -51,13 +51,23 @@ local settings = {
         settingValue = MyAddonDB.yOffset or 0,
         settingKey = "yOffset",
     },
-    
+    tokensPerRow = {
+        settingText = "Tokens per row",
+        settingTooltip = "Configure the number of tokens per row",
+        settingType = "slider",
+        settingMin = 1,
+        settingMax  = 40,
+        settingValue = MyAddonDB.tokensPerRow or 5,
+        settingDecimals = 0,
+        settingStep = 1,
+        settingKey = "tokensPerRow",
+    },
 }
 
 MENU_CLOSED = MENU_CLOSED or "MENU_CLOSED"
 
 local settingsFrame = CreateFrame("Frame", "MyAddonSettingsFrame", UIParent, "BasicFrameTemplateWithInset")
-settingsFrame:SetSize(400, 300)
+settingsFrame:SetSize(400, 600)
 settingsFrame:SetPoint("CENTER")
 settingsFrame.TitleBg:SetHeight(30)
 settingsFrame.title = settingsFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -112,7 +122,7 @@ local defaultHeight = 20
 local defaultMaxLetters = 10
 
 local function SetEditBoxProperties(editBox, width, height, maxChars)
-    editBox:SetPoint("TOPLEFT", settingsFrame, "TOPLEFT", 0, -30 + (settingsHeight * -30))
+    editBox:SetPoint("TOPLEFT", settingsFrame, "TOPLEFT", 20, -30 + (settingsHeight * -30))
     if not width then width = defaultWidth end
     if not height then height = defaultHeight end
     if not maxLetters then maxLetters = defaultMaxLetters end
@@ -180,7 +190,7 @@ end
 local function AddSliderText(slider, min, max, value)
     slider.label = slider:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     slider.label:SetPoint("TOP", slider, "BOTTOM", 0, -5)
-    slider.label:SetText("Adjust Value: " .. format("%.1f", value))
+    slider.label:SetText(value)
 
     slider.low = slider:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     slider.low:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", -5, -20)
@@ -198,9 +208,9 @@ end
 
 local function HandleSliderValueChanges(slider)
     slider:SetScript("OnValueChanged", function(self, value)
-        local roundedValue = round(value, settings[slider.key].settingDecimals) 
+        local roundedValue = round(value, settings[slider.key].settingDecimals) -- instead of creating a key element in the menu item, create an index element that allows us to access the setting instead. Then we can access settings in order 
         MyAddonDB[slider.key] = roundedValue
-        slider.label:SetText("Adjust Value: " .. format("%.1f", roundedValue))
+        slider.label:SetText(roundedValue)
     end)
 end
 

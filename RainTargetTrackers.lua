@@ -115,9 +115,12 @@ local function UpdateTexture(targetNamePlate, texture)
     texture:Hide()
     texture:SetParent(targetNamePlate.UnitFrame)
     if Plater then texture:SetParent(targetNamePlate.unitFrame) end
-    local targetCountMultiplier = MyAddonDB.tokenSize / 16
-    local targetCountOffset = (targetCounts[targetNamePlate] - 1) * 20 * targetCountMultiplier
-    texture:SetPoint(MyAddonDB.anchor, targetNamePlate, MyAddonDB.anchor, 10 + MyAddonDB.xOffset + targetCountOffset, MyAddonDB.yOffset)
+    local tokenScaleMultiplier = MyAddonDB.tokenSize / 16
+    local rowPosition = (targetCounts[targetNamePlate] - 1) % MyAddonDB.tokensPerRow
+    local targetCountOffset = (rowPosition - 1) * 20 * tokenScaleMultiplier
+    local rowCount = math.ceil(targetCounts[targetNamePlate]/MyAddonDB.tokensPerRow) 
+    local rowCountOffset = (rowCount - 1) * 20 * tokenScaleMultiplier
+    texture:SetPoint(MyAddonDB.anchor, targetNamePlate, MyAddonDB.anchor, MyAddonDB.xOffset + targetCountOffset, MyAddonDB.yOffset + rowCountOffset)
     texture:Show()
 end
 
