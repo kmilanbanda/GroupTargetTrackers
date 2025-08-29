@@ -5,7 +5,7 @@ local settingsHeight = 1
 local settings = {
     {
        settingText = "Display Player Token",
-       settingTooltip = "While enabled, a token for the player will be generated",
+       settingTooltip = "While enabled, a token for the player will be generated. Not applicable in raid",
        settingType = "checkbox",
        settingKey = "displayPlayerToken",
     },
@@ -114,6 +114,7 @@ settingsFrame:SetScript("OnHide", function(self)
 end)
 
 MyAddon:RegisterCallback(MENU_CLOSED, OnMenuClosed)
+MyAddon:RegisterCallback(INSPECTION_COMPLETE, OnInspectionComplete)
 
 --- Edit Box Helper Functions ---
 
@@ -209,7 +210,7 @@ end
 
 local function HandleSliderValueChanges(slider)
     slider:SetScript("OnValueChanged", function(self, value)
-        local roundedValue = round(value, settings[slider.key].settingDecimals) -- instead of creating a key element in the menu item, create an index element that allows us to access the setting instead. Then we can access settings in order 
+        local roundedValue = round(value, settings[slider.index].settingDecimals) -- instead of creating a key element in the menu item, create an index element that allows us to access the setting instead. Then we can access settings in order 
         MyAddonDB[slider.key] = roundedValue
         slider.label:SetText(roundedValue)
     end)

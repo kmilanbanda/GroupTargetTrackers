@@ -1,8 +1,8 @@
 ## Interface: 110200
 ## Title: Rain Target Trackers
-## Notes: Draws a dot, circle, pip, icon etc. over a given target's health bar for each player currently targeting.
+## Notes: Draws a token over a given target's health bar for each player currently targeting.
 ## Author: Kyle Banda
-## Version: 0.0.1
+## Version: 0.0.5
 ## RequiredDeps:
 ## X-Curse-Project-ID: 999999
 ## SavedVariables:
@@ -13,5 +13,7 @@ libs/Ace3/AceDB-3.0/AceDB-3.0.lua
 libs/LibDBIcon-1.0/embeds.xml
 
 # Main Files
+SpecRoles.lua
+Inspection.lua
 RainTargetTrackers.lua
 Settings.lua
