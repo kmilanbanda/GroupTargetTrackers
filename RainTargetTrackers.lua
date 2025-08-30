@@ -13,21 +13,38 @@ MyAddonDB.loadCount = MyAddonDB.loadCount + 1
 
 local function InitializePlaterAPIAccess()
     Plater = _G["Plater"]
-    if Plater then
-        print("Plater API accessed successfully!")
+    if not Plater then
+        print("Plater API could not be accessed.")
     end
     return Plater
 end
 local Plater = InitializePlaterAPIAccess()
 
-SLASH_DUMP1 = "/refresh"
-SlashCmdList["DUMP"] = function()
-    RefreshTokens()
-end
-
-local circleTextures = {}
+local tokenTextures = {}
 local targetCounts = {}
 local currentTargets = {}
+
+local function GetUnitRole(unitID) -- possible roles: "tank", "healer", "rdps", "mdps"
+   unitSpecID = unitSpecCache[UnitGUID(unitID)]
+   return specRoles[unitSpecID]
+end
+
+local function GetTexturePath(unitID)
+    local role = GetUnitRole(unitID)
+    local path = ""
+    if role == "tank" then
+        path =  "Interface\\Addons\\RainTargetTrackers\\Textures\\tank.blp"
+    elseif role == "healer" then
+        path =  "Interface\\Addons\\RainTargetTrackers\\Textures\\healer.blp"
+    elseif role == "rdps" then
+        path =  "Interface\\Addons\\RainTargetTrackers\\Textures\\rdps.blp"
+    elseif role == "mdps" then
+        path =  "Interface\\Addons\\RainTargetTrackers\\Textures\\mdps.blp"
+    else
+        print("Error: no role or incorrect role given. role =", role)
+    end
+    return path
+end
 
 local function GetAtlas(unitID)
     local role = UnitGroupRolesAssigned(unitID)
@@ -44,44 +61,53 @@ local function GetAtlas(unitID)
 end
 
 local function CreateToken(unitID)
-    if not unitID then
+    if not UnitExists(unitID) then
+        return
+    end
+    local newToken = CreateFrame("Frame", unitID .. "TokenFrame")
+    if not newToken then
         return
     end
 
-    local newCircle = CreateFrame("Frame", unitID .. "CircleFrame")
-    if not newCircle then
-        print("Circle creation failed for ".. unitID)
-        return
-    end
-
-    local texture = newCircle:CreateTexture(unitID .. "Circle", "OVERLAY")
+    local texture = newToken:CreateTexture(unitID .. "Token", "OVERLAY")
     if not texture then
-        print("Texture creation failed for", UnitID)
         return
     end
-
-    texture:SetTexture("Interface\\LFGFrame\\UI-LFG-ICON-ROLES")
-    texture:SetAtlas(GetAtlas(unitID))
+    if unitSpecCache[UnitGUID(unitID)] then
+        texture:SetTexture(GetTexturePath(unitID))
+    else
+        texture:SetTexture("Interface\\LFGFrame\\UI-LFG-ICON-ROLES")
+        texture:SetAtlas(GetAtlas(unitID))
+    end    
     texture:SetSize(MyAddonDB.tokenSize, MyAddonDB.tokenSize)
-    circleTextures[unitID] = texture
+    tokenTextures[unitID] = texture
 end
 
 local function RefreshToken(unitID)
-    texture = circleTextures[unitID]
+    texture = tokenTextures[unitID]
 
-    texture:SetTexture("Interface\\LFGFrame\\UI-LFG-ICON-ROLES")
-    texture:SetAtlas(GetAtlas(unitID))
+    if not texture then 
+        return 
+    end
+    if unitSpecCache[UnitGUID(unitID)] then
+        texture:SetTexture(GetTexturePath(unitID))
+    else
+        texture:SetTexture("Interface\\LFGFrame\\UI-LFG-ICON-ROLES")
+        texture:SetAtlas(GetAtlas(unitID))
+        QueueInspection(unitID)
+    end
+
     if MyAddonDB.tokenSize then
         texture:SetSize(MyAddonDB.tokenSize, MyAddonDB.tokenSize)
     else
         print("Error: MyAddonDB.tokenSize not initialized. Setting to defaults")
         texture:SetSize(16, 16)
-        MyAddonDB.tokenSize =  16
+        MyAddonDB.tokenSize = 16
     end
 end
 
 local function RefreshTokens()
-    for unit, _ in pairs(circleTextures) do
+    for unit, _ in pairs(tokenTextures) do
         RefreshToken(unit)
     end
 end
@@ -129,7 +155,12 @@ function UnitHasTarget(unit)
 end
 
 local function UpdateToken(unit)
-    local texture = circleTextures[unit]
+    local texture = tokenTextures[unit]
+    if not texture then 
+        CreateToken(unit)
+        texture = tokenTextures[unit]
+    end
+
     if UnitHasTarget(unit) then
         local targetNamePlate = C_NamePlate.GetNamePlateForUnit(unit .. "target")
         if Plater then
@@ -165,8 +196,17 @@ local function UpdateToken(unit)
         if currentTargets[unit] then
 			currentTargets[unit] = nil
         end
-        texture:Hide()
+        if texture then
+            texture:Hide()
+        end
     end
+end
+
+local function InitializePlayer()
+    local unitID = "player"
+    local specIndex = GetSpecialization()
+    local specID = GetSpecializationInfo(specIndex)
+    if specID then unitSpecCache[UnitGUID(unitID)] = specID end
 end
 
 local partyPattern = "^party%d+$"
@@ -188,8 +228,10 @@ eventListenerFrame:RegisterEvent("ADDON_LOADED")
 eventListenerFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 eventListenerFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 eventListenerFrame:RegisterEvent("GROUP_JOINED")
+eventListenerFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
 local function eventHandler(self, event, arg1)
     if event == "PLAYER_ENTERING_WORLD" or event == "GROUP_ROSTER_UPDATE" then
+        InitializePlayer()
         RefreshTokens()
     elseif event == "ADDON_LOADED" and arg1 == "RainTargetTrackers" then 
         MyAddonDB.updateInterval = MyAddonDB.updateInterval or 0.2
@@ -200,10 +242,22 @@ local function eventHandler(self, event, arg1)
         MyAddonDB.rowSpacing = MyAddonDB.rowSpacing or 20
         MyAddonDB.columnSpacing = MyAddonDB.columnSpacing or 20
         MyAddonDB.anchor = MyAddonDB.anchor or "TOPLEFT"
+    elseif event == "PLAYER_SPECIALIZATION_CHANGED" then
+        local specIndex = GetSpecialization()
+        local specID = GetSpecializationInfo(specIndex)
+        unitSpecCache[UnitGUID("player")] = specID
+        RefreshToken("player")
     end
 end
 
 eventListenerFrame:SetScript("OnEvent", eventHandler)
+
+function OnInspectionComplete(frame, unit)
+    if not UnitExists(unit) then 
+        return 
+    end
+    RefreshToken(unit)
+end
 
 function OnMenuClosed(frame)
     if ticker then ticker:Cancel() end
@@ -227,19 +281,33 @@ end
 
 local function UpdatePlayer()
     unitID = "player"
-    if not circleTextures[unitID] then
+    if UnitInRaid(unitID) then return end
+    if not tokenTextures[unitID] then
         CreateToken(unitID)
     end
     UpdateToken(unitID)
 end
 
-local function UpdateGroup(groupType)
+local function InitializeGroup()
     groupType = GetGroupType()
-    for i = 1, 30, 1
+    for i = 1, 40, 1
     do
         unitID = groupType .. i
         if not UnitExists(unitID) then break end
-        if not circleTextures[unitID] then
+        guid = UnitGUID(unitID)
+        if not unitSpecCache[guid] then QueueInspection(unitID) end
+    end
+end
+
+local function UpdateGroup()
+    groupType = GetGroupType()
+    for i = 1, 40, 1
+    do
+        unitID = groupType .. i
+        if not UnitExists(unitID) then break end
+        guid = UnitGUID(unitID)
+        if not unitSpecCache[guid] then QueueInspection(unitID) end
+        if not tokenTextures[unitID] then
             CreateToken(unitID)
         end
         UpdateToken(unitID)
