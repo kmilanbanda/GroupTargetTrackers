@@ -13,8 +13,8 @@ MyAddonDB.loadCount = MyAddonDB.loadCount + 1
 
 local function InitializePlaterAPIAccess()
     Plater = _G["Plater"]
-    if Plater then
-        print("Plater API accessed successfully!")
+    if not Plater then
+        print("Plater API could not be accessed.")
     end
     return Plater
 end
@@ -26,7 +26,6 @@ local currentTargets = {}
 
 local function GetUnitRole(unitID) -- possible roles: "tank", "healer", "rdps", "mdps"
    unitSpecID = unitSpecCache[UnitGUID(unitID)]
-   print("UnitID:", unitID, "UnitSpec:", unitSpecCache[UnitGUID(unitID)])
    return specRoles[unitSpecID]
 end
 
@@ -65,24 +64,18 @@ local function CreateToken(unitID)
     if not UnitExists(unitID) then
         return
     end
-    print("unit exists!")
     local newToken = CreateFrame("Frame", unitID .. "TokenFrame")
     if not newToken then
-        print("Token creation failed for ".. unitID)
         return
     end
 
     local texture = newToken:CreateTexture(unitID .. "Token", "OVERLAY")
     if not texture then
-        print("Texture creation failed for", UnitID)
         return
     end
-    print("unitSpecCache[UnitGUID(unitID)]:", unitSpecCache[UnitGUID(unitID)])
     if unitSpecCache[UnitGUID(unitID)] then
-        print("Getting New Texture Path")
         texture:SetTexture(GetTexturePath(unitID))
     else
-        print("Using Old Texture Path")
         texture:SetTexture("Interface\\LFGFrame\\UI-LFG-ICON-ROLES")
         texture:SetAtlas(GetAtlas(unitID))
     end    
@@ -91,18 +84,14 @@ local function CreateToken(unitID)
 end
 
 local function RefreshToken(unitID)
-    print("Refresh:", unitID)
     texture = tokenTextures[unitID]
 
     if not texture then 
-        print("No texture!")
         return 
     end
     if unitSpecCache[UnitGUID(unitID)] then
-        print("RefreshToken", unitID, "new")
         texture:SetTexture(GetTexturePath(unitID))
     else
-        print("RefreshToken", unitID, "old")
         texture:SetTexture("Interface\\LFGFrame\\UI-LFG-ICON-ROLES")
         texture:SetAtlas(GetAtlas(unitID))
         QueueInspection(unitID)
@@ -264,12 +253,9 @@ end
 eventListenerFrame:SetScript("OnEvent", eventHandler)
 
 function OnInspectionComplete(frame, unit)
-    print("inspection complete:", unit)
     if not UnitExists(unit) then 
-        print("But the unit does not exist!", unit)
         return 
     end
-    print("Refreshing Token for:", unit)
     RefreshToken(unit)
 end
 

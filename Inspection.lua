@@ -46,15 +46,10 @@ inspectionListenerFrame:RegisterEvent("INSPECT_READY")
 inspectionListenerFrame:SetScript("OnEvent", function(_, event, guid)
     if event == "INSPECT_READY" and guid then
         local unit = inspectionQueue[1]
-        print("INSPECT_READY:", unit)
         if unit and UnitGUID(unit) == guid then
-            print("guid good")
             local specID = GetInspectSpecialization(unit)
-            print("specID is", specID)
             if specID and specID ~= 0 then
-                print("Getting Specialization Info By ID")
                 local _, specName = GetSpecializationInfoByID(specID)
-                print("Caching " .. UnitName(unit) .. "\'s specID: " .. specID)  
                 unitSpecCache[guid] = specID
             end
         end
