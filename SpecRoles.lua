@@ -28,7 +28,7 @@ _G.specRoles = {
     [66] = "tank", -- Protection 
     [70] = "mdps", -- Retribution
     -- Priest
-    [256] = "rdps", -- Discipline 
+    [256] = "healer", -- Discipline 
     [257] = "healer", -- Holy 
     [258] = "rdps", -- Shadow
     -- Rogue
