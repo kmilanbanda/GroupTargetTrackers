@@ -223,6 +223,12 @@ local function IsUnitsTarget(unitID, targetID)
     return UnitGUID(unitID) == UnitGUID(targetID)
 end
 
+local function HideRemovedNamePlateTextures(removedNameplate)
+    for unit, targetNamePlate in pairs(currentTargets) do
+        if targetNamePlate == removedNameplate then texture:Hide() end
+    end
+end
+
 local eventListenerFrame = CreateFrame("Frame", "MyAddonEventListenerFrame", UIParent)
 eventListenerFrame:RegisterEvent("ADDON_LOADED")
 eventListenerFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -233,6 +239,7 @@ local function eventHandler(self, event, arg1)
     if event == "PLAYER_ENTERING_WORLD" or event == "GROUP_ROSTER_UPDATE" then
         InitializePlayer()
         RefreshTokens()
+        if event == "PLAYER_ENTERING_WORLD" then currentTargets = {} end
     elseif event == "ADDON_LOADED" and arg1 == "RainTargetTrackers" then 
         MyAddonDB.updateInterval = MyAddonDB.updateInterval or 0.2
         MyAddonDB.tokenSize = MyAddonDB.tokenSize or 16
@@ -247,6 +254,9 @@ local function eventHandler(self, event, arg1)
         local specID = GetSpecializationInfo(specIndex)
         unitSpecCache[UnitGUID("player")] = specID
         RefreshToken("player")
+    elseif event == "NAME_PLATE_UNIT_REMOVED" then
+        removedNamePlate = C_NamePlate.GetNamePlateForUnit(arg1)
+        HideRemovedNamePlateTextures(removedNamePlate)
     end
 end
 
