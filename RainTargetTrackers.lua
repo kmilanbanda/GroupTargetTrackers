@@ -137,16 +137,26 @@ local function ResetTargetCounts()
     end
 end
 
+local function GetGrowDirection()
+    growDirection = MyAddonDB.growDirection
+    if growDirection == "Right and Up" then return { 1, 1 } end
+    if growDirection == "Right and Down" then return { 1, 1 } end
+    if growDirection == "Left and Up" then return { -1, -1 } end
+    if growDirection == "Left and Down" then return { -1, -1 } end
+    return { 1, 1 }
+end
+
 local function UpdateTexture(targetNamePlate, texture)
     texture:Hide()
     texture:SetParent(targetNamePlate.UnitFrame)
     if Plater then texture:SetParent(targetNamePlate.unitFrame) end
+    local growDirection = GetGrowDirection()
     local tokenScaleMultiplier = MyAddonDB.tokenSize / 16
     local rowPosition = (targetCounts[targetNamePlate] - 1) % MyAddonDB.tokensPerRow
-    local targetCountOffset = (rowPosition - 1) * 20 * tokenScaleMultiplier
+    local targetCountOffset = (rowPosition) * 20 * tokenScaleMultiplier * growDirection[1]
     local rowCount = math.ceil(targetCounts[targetNamePlate]/MyAddonDB.tokensPerRow) 
-    local rowCountOffset = (rowCount - 1) * 20 * tokenScaleMultiplier
-    texture:SetPoint(MyAddonDB.anchor, targetNamePlate, MyAddonDB.anchor, MyAddonDB.xOffset + targetCountOffset, MyAddonDB.yOffset + rowCountOffset)
+    local rowCountOffset = (rowCount - 1) * 20 * tokenScaleMultiplier * growDirection[2]
+    texture:SetPoint("CENTER", targetNamePlate, MyAddonDB.anchor, MyAddonDB.xOffset + targetCountOffset, MyAddonDB.yOffset + rowCountOffset)
     texture:Show()
 end
 
@@ -249,6 +259,7 @@ local function eventHandler(self, event, arg1)
         MyAddonDB.rowSpacing = MyAddonDB.rowSpacing or 20
         MyAddonDB.columnSpacing = MyAddonDB.columnSpacing or 20
         MyAddonDB.anchor = MyAddonDB.anchor or "TOPLEFT"
+        MyAddonDB.growDirection = MyAddonDB.growDirection or "Right and Up"
     elseif event == "PLAYER_SPECIALIZATION_CHANGED" then
         local specIndex = GetSpecialization()
         local specID = GetSpecializationInfo(specIndex)
