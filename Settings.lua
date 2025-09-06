@@ -85,7 +85,7 @@ local settings = {
 MENU_CLOSED = MENU_CLOSED or "MENU_CLOSED"
 
 local settingsFrame = CreateFrame("Frame", "MyAddonSettingsFrame", UIParent, "BasicFrameTemplateWithInset")
-settingsFrame:SetSize(400, 500)
+settingsFrame:SetSize(250, 500)
 settingsFrame:SetPoint("CENTER")
 settingsFrame.TitleBg:SetHeight(30)
 settingsFrame.title = settingsFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -146,7 +146,7 @@ local function CreateDropdown(text, key, tooltip, options, index)
     dropdown.key = key
     dropdown.index = index
 
-    dropdown:SetPoint("TOPLEFT", settingsFrame, "TOPLEFT", 20, -30 + (settingsHeight * -30))
+    dropdown:SetPoint("TOPLEFT", settingsFrame, "TOPLEFT", 10, -30 + (settingsHeight * -30))
     dropdown:SetDefaultText(MyAddonDB[dropdown.key])
 
     dropdown:SetupMenu(function(dropdown, rootDescription)
@@ -175,7 +175,7 @@ local defaultHeight = 20
 local defaultMaxLetters = 10
 
 local function SetEditBoxProperties(editBox, width, height, maxChars)
-    editBox:SetPoint("TOPLEFT", settingsFrame, "TOPLEFT", 20, -30 + (settingsHeight * -30))
+    editBox:SetPoint("TOPLEFT", settingsFrame, "TOPLEFT", 15, -30 + (settingsHeight * -30))
     if not width then width = defaultWidth end
     if not height then height = defaultHeight end
     if not maxLetters then maxLetters = defaultMaxLetters end
@@ -188,7 +188,7 @@ end
 
 local function CreateLabelForBox(editBox)
     local label = editBox:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    label:SetPoint("BOTTOMLEFT", editBox, "TOPLEFT", 0, 4)
+    label:SetPoint("BOTTOMLEFT", editBox, "TOPLEFT", -5, 4)
     label:SetText("Enter " .. settings[editBox.index].settingText .. ": ")
 end
 
@@ -276,7 +276,7 @@ local function CreateSlider(sliderText, key, tooltip, min, max, index)
     local slider = CreateFrame("Slider", "MyAddonSlider" .. sliderText, settingsFrame, "OptionsSliderTemplate")
     slider.Text:SetText(sliderText)
     slider.Text:SetTextColor(1, 0.82, 0)
-    slider:SetPoint("LEFT", settingsFrame, "TOPLEFT", 20, -30 + (settingsHeight * -30))
+    slider:SetPoint("CENTER", settingsFrame, "TOP", 0, -30 + (settingsHeight * -30))
     slider.key = key
     slider.index = index
 
