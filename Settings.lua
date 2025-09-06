@@ -1,7 +1,9 @@
 MyAddonDB.updateInterval = MyAddonDB.updateInterval or 0.2
 MyAddonDB.tokenSize = MyAddonDB.tokenSize or 20
 
-local settingsHeight = 1
+UIParentLoadAddOn("Blizzard_Deprecated")
+
+local settingsHeight = 0
 local settings = {
     {
        settingText = "Display Player Token",
@@ -62,12 +64,28 @@ local settings = {
         settingValue = MyAddonDB.yOffset or 0,
         settingKey = "yOffset",
     },
+    {
+        settingText = "Token Anchor",
+        settingTooltip = "Choose the point a token's position will be based on",
+        settingType = "dropdown",
+        settingKey = "anchor",
+        settingValue = MyAddonDB.anchor or "TOPLEFT",
+        settingOptions = { "TOPLEFT", "TOP", "TOPRIGHT", "LEFT", "CENTER", "RIGHT", "BOTTOMLEFT", "BOTTOM", "BOTTOMRIGHT", },
+    },
+    {
+        settingText = "Grow Direction",
+        settingTooltip = "Choose the direction the rows of tokens grow",
+        settingType = "dropdown",
+        settingKey = "growDirection",
+        settingValue = MyAddonDB.growDirection or { 1, 1, },
+        settingOptions = { "Right and Up", "Right and Down", "Left and Up", "Left and Down", },
+    },
 }
 
 MENU_CLOSED = MENU_CLOSED or "MENU_CLOSED"
 
 local settingsFrame = CreateFrame("Frame", "MyAddonSettingsFrame", UIParent, "BasicFrameTemplateWithInset")
-settingsFrame:SetSize(400, 600)
+settingsFrame:SetSize(250, 500)
 settingsFrame:SetPoint("CENTER")
 settingsFrame.TitleBg:SetHeight(30)
 settingsFrame.title = settingsFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -77,6 +95,7 @@ settingsFrame:Hide()
 settingsFrame:EnableMouse(true)
 settingsFrame:SetMovable(true)
 settingsFrame:RegisterForDrag("LeftButton")
+
 settingsFrame:SetScript("OnDragStart", function(self)
 	self:StartMoving()
 end)
@@ -116,6 +135,39 @@ end)
 MyAddon:RegisterCallback(MENU_CLOSED, OnMenuClosed)
 MyAddon:RegisterCallback(INSPECTION_COMPLETE, OnInspectionComplete)
 
+--- Dropdown Helper Functions ---
+
+
+
+--- Dropdown Helper Functions ---|
+
+local function CreateDropdown(text, key, tooltip, options, index)
+    local dropdown = CreateFrame("DropdownButton", "RainTargetTrackersDropdownID" .. settingsHeight, settingsFrame, "WowStyle1DropdownTemplate")
+    dropdown.key = key
+    dropdown.index = index
+
+    dropdown:SetPoint("TOPLEFT", settingsFrame, "TOPLEFT", 10, -30 + (settingsHeight * -30))
+    dropdown:SetDefaultText(MyAddonDB[dropdown.key])
+
+    dropdown:SetupMenu(function(dropdown, rootDescription)
+        rootDescription:CreateTitle(text)
+
+        for _, option in ipairs(options) do
+            rootDescription:CreateButton(option, function()
+                MyAddonDB[dropdown.key] = option
+                dropdown:SetDefaultText(option)
+            end)
+        end
+    end)
+
+    local title = dropdown:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    title:SetPoint("BOTTOMLEFT", dropdown, "TOPLEFT", 0, 5)
+    title:SetText(text)
+    title:SetTextColor(1, 0.82, 0)
+
+    settingsHeight = settingsHeight + 1.5
+end
+
 --- Edit Box Helper Functions ---
 
 local defaultWidth = 40
@@ -123,11 +175,12 @@ local defaultHeight = 20
 local defaultMaxLetters = 10
 
 local function SetEditBoxProperties(editBox, width, height, maxChars)
-    editBox:SetPoint("TOPLEFT", settingsFrame, "TOPLEFT", 20, -30 + (settingsHeight * -30))
+    editBox:SetPoint("TOPLEFT", settingsFrame, "TOPLEFT", 15, -30 + (settingsHeight * -30))
     if not width then width = defaultWidth end
     if not height then height = defaultHeight end
     if not maxLetters then maxLetters = defaultMaxLetters end
     editBox:SetSize(width, height)
+    editBox:SetText(MyAddonDB[editBox.key])
     editBox:SetAutoFocus(false)
     editBox:SetMaxLetters(maxLetters)
     editBox:SetFontObject("GameFontHighlight")
@@ -135,7 +188,7 @@ end
 
 local function CreateLabelForBox(editBox)
     local label = editBox:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    label:SetPoint("BOTTOMLEFT", editBox, "TOPLEFT", 0, 4)
+    label:SetPoint("BOTTOMLEFT", editBox, "TOPLEFT", -5, 4)
     label:SetText("Enter " .. settings[editBox.index].settingText .. ": ")
 end
 
@@ -152,6 +205,7 @@ local function ValidateAndSaveEditBoxInput(editBox)
         local input = self:GetText()
         if input:match("^-?[0-9]+$") then
             MyAddonDB[editBox.key] = input
+            self:SetText(MyAddonDB[editBox.key])
             self:ClearFocus()
         else
             self:SetText(MyAddonDB[editBox.key])
@@ -169,7 +223,7 @@ local function CreateEditBox(editBoxText, key, tooltip, width, height, maxChars,
     
     SetEditBoxProperties(editBox, width, height, maxChars)
     CreateLabelForBox(editBox)
-    RestrictEditBoxInput(editBox)
+    ---RestrictEditBoxInput(editBox)
     ValidateAndSaveEditBoxInput(editBox)
 
     settingsHeight = settingsHeight + 1.5
@@ -221,6 +275,7 @@ end
 local function CreateSlider(sliderText, key, tooltip, min, max, index)
     local slider = CreateFrame("Slider", "MyAddonSlider" .. sliderText, settingsFrame, "OptionsSliderTemplate")
     slider.Text:SetText(sliderText)
+    slider.Text:SetTextColor(1, 0.82, 0)
     slider:SetPoint("CENTER", settingsFrame, "TOP", 0, -30 + (settingsHeight * -30))
     slider.key = key
     slider.index = index
@@ -283,6 +338,8 @@ eventListenerFrame:SetScript("OnEvent", function(self, event)
                 CreateSlider(setting.settingText, setting.settingKey, setting.settingTooltip, setting.settingMin, setting.settingMax, index)
             elseif setting.settingType == "editbox" or setting.settingType == "editBox" then
                 CreateEditBox(setting.settingText, setting.settingKey, setting.settingTooltip, setting.settingWidth, setting.settingHeight, setting.settingMaxChars, index)
+            elseif setting.settingType == "dropdown" then
+                CreateDropdown(setting.settingText, setting.settingKey, setting.settingTooltip, setting.settingOptions, index)
             else
                 print("Rain Target Trackers: invalid setting type")
             end
