@@ -1,8 +1,3 @@
-MyAddonDB.updateInterval = MyAddonDB.updateInterval or 0.2
-MyAddonDB.tokenSize = MyAddonDB.tokenSize or 20
-
-UIParentLoadAddOn("Blizzard_Deprecated")
-
 local settingsHeight = 0
 local settings = {
     {
@@ -137,33 +132,38 @@ MyAddon:RegisterCallback(INSPECTION_COMPLETE, OnInspectionComplete)
 
 --- Dropdown Helper Functions ---
 
-
-
---- Dropdown Helper Functions ---|
-
-local function CreateDropdown(text, key, tooltip, options, index)
-    local dropdown = CreateFrame("DropdownButton", "RainTargetTrackersDropdownID" .. settingsHeight, settingsFrame, "WowStyle1DropdownTemplate")
-    dropdown.key = key
-    dropdown.index = index
-
+local function SetDropdownProperties(dropdown, setting, options)
     dropdown:SetPoint("TOPLEFT", settingsFrame, "TOPLEFT", 10, -30 + (settingsHeight * -30))
     dropdown:SetDefaultText(MyAddonDB[dropdown.key])
 
     dropdown:SetupMenu(function(dropdown, rootDescription)
-        rootDescription:CreateTitle(text)
+        rootDescription:CreateTitle(setting.settingText)
 
-        for _, option in ipairs(options) do
+        for _, option in ipairs(setting.settingOptions) do
             rootDescription:CreateButton(option, function()
                 MyAddonDB[dropdown.key] = option
                 dropdown:SetDefaultText(option)
             end)
         end
     end)
+end
 
+local function CreateDropdownTitle(dropdown, setting)
     local title = dropdown:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     title:SetPoint("BOTTOMLEFT", dropdown, "TOPLEFT", 0, 5)
-    title:SetText(text)
+    title:SetText(setting.settingText)
     title:SetTextColor(1, 0.82, 0)
+end
+
+--- Dropdown Helper Functions ---|
+
+local function CreateDropdown(setting, index)
+    local dropdown = CreateFrame("DropdownButton", "RainTargetTrackersDropdownID" .. settingsHeight, settingsFrame, "WowStyle1DropdownTemplate")
+    dropdown.key = setting.settingKey
+    dropdown.index = index
+
+    SetDropdownProperties(dropdown, setting)
+    CreateDropdownTitle(dropdown, setting)
 
     settingsHeight = settingsHeight + 1.5
 end
@@ -172,17 +172,14 @@ end
 
 local defaultWidth = 40
 local defaultHeight = 20
-local defaultMaxLetters = 10
+local defaultMaxChars = 10
 
-local function SetEditBoxProperties(editBox, width, height, maxChars)
+local function SetEditBoxProperties(editBox, setting)
     editBox:SetPoint("TOPLEFT", settingsFrame, "TOPLEFT", 15, -30 + (settingsHeight * -30))
-    if not width then width = defaultWidth end
-    if not height then height = defaultHeight end
-    if not maxLetters then maxLetters = defaultMaxLetters end
-    editBox:SetSize(width, height)
+    editBox:SetSize(setting.settingWidth, setting.settingHeight)
     editBox:SetText(MyAddonDB[editBox.key])
     editBox:SetAutoFocus(false)
-    editBox:SetMaxLetters(maxLetters)
+    editBox:SetMaxLetters(defaultMaxChars)
     editBox:SetFontObject("GameFontHighlight")
 end
 
@@ -190,14 +187,6 @@ local function CreateLabelForBox(editBox)
     local label = editBox:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     label:SetPoint("BOTTOMLEFT", editBox, "TOPLEFT", -5, 4)
     label:SetText("Enter " .. settings[editBox.index].settingText .. ": ")
-end
-
-local function RestrictEditBoxInput(editBox)
-    editBox:SetScript("OnChar", function(self, char)
-        if not char:match("[0-9]") and not char:match("-") then
-            return
-        end
-    end)
 end
 
 local function ValidateAndSaveEditBoxInput(editBox)
@@ -216,14 +205,13 @@ end
 
 --- Edit Box Helper Functions ---|
 
-local function CreateEditBox(editBoxText, key, tooltip, width, height, maxChars, index)
+local function CreateEditBox(setting, index)
     local editBox = CreateFrame("EditBox",  "MyAddonEditBoxID" .. settingsHeight, settingsFrame, "InputBoxTemplate")
-    editBox.key = key
+    editBox.key = setting.settingKey
     editBox.index = index
     
-    SetEditBoxProperties(editBox, width, height, maxChars)
+    SetEditBoxProperties(editBox, setting)
     CreateLabelForBox(editBox)
-    ---RestrictEditBoxInput(editBox)
     ValidateAndSaveEditBoxInput(editBox)
 
     settingsHeight = settingsHeight + 1.5
@@ -235,26 +223,26 @@ end
 local sliderWidth = 200
 local sliderHeight = 20
 
-local function SetSliderProperties(slider, min, max, value)
+local function SetSliderProperties(slider, setting, value)
     slider:SetWidth(sliderWidth)
     slider:SetHeight(sliderHeight)
-    slider:SetMinMaxValues(min, max)
+    slider:SetMinMaxValues(setting.settingMin, setting.settingMax)
     slider:SetValueStep(settings[slider.index].settingStep)
     slider:SetValue(value) 
 end
 
-local function AddSliderText(slider, min, max, value)
+local function AddSliderText(slider, setting, value)
     slider.label = slider:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     slider.label:SetPoint("TOP", slider, "BOTTOM", 0, -5)
     slider.label:SetText(value)
 
     slider.low = slider:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     slider.low:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", -5, -20)
-    slider.low:SetText(min)
+    slider.low:SetText(setting.settingMin)
 
     slider.high = slider:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     slider.high:SetPoint("TOPRIGHT", slider, "BOTTOMRIGHT", 5, -20)
-    slider.high:SetText(max)
+    slider.high:SetText(setting.settingMax)
 end
 
 function round(number, decimals)
@@ -272,41 +260,41 @@ end
 
 --- Slider Helper Functions ---|
 
-local function CreateSlider(sliderText, key, tooltip, min, max, index)
-    local slider = CreateFrame("Slider", "MyAddonSlider" .. sliderText, settingsFrame, "OptionsSliderTemplate")
-    slider.Text:SetText(sliderText)
+local function CreateSlider(setting, index)
+    local slider = CreateFrame("Slider", "MyAddonSlider" .. setting.settingText, settingsFrame, "OptionsSliderTemplate")
+    slider.Text:SetText(setting.settingKey)
     slider.Text:SetTextColor(1, 0.82, 0)
     slider:SetPoint("CENTER", settingsFrame, "TOP", 0, -30 + (settingsHeight * -30))
-    slider.key = key
+    slider.key = setting.settingKey
     slider.index = index
-
-    if MyAddonDB.settingsKeys[key] == nil then
-        MyAddonDB.settingsKeys[key] = true
-    end
     
-    value = MyAddonDB[key] or settings[key].settingDefault
-    SetSliderProperties(slider, min, max, value)
-    AddSliderText(slider, min, max, value)
+    value = MyAddonDB[slider.key] or settings[index].settingDefault
+    SetSliderProperties(slider, setting, value)
+    AddSliderText(slider, setting, value)
     HandleSliderValueChanges(slider)
     
     settingsHeight = settingsHeight + 2.5
     return slider
 end
 
-local function CreateCheckbox(checkboxText, key, checkboxTooltip, index)
-    local checkbox = CreateFrame("CheckButton", "MyAddonCheckboxID" .. settingsHeight, settingsFrame, "UICheckButtonTemplate")
-    checkbox.Text:SetText(checkboxText)
+--- Checkbox Helper Functions ---
+
+local function SetCheckboxProperties(checkbox, setting)
+    checkbox.Text:SetText(setting.settingText)
     checkbox:SetPoint("TOPLEFT", settingsFrame, "TOPLEFT", 10, -30 + (settingsHeight * -30))
+end
 
-    if MyAddonDB.settingsKeys[key] == nil  then
-        MyAddonDB.settingsKeys[key] = true
+local function UpdateCheckbox(checkbox)
+    if MyAddonDB.settingsKeys[checkbox.key] == nil  then
+        MyAddonDB.settingsKeys[checkbox.key] = true
     end
+    checkbox:SetChecked(MyAddonDB.settingsKeys[checkbox.key])
+end
 
-    checkbox:SetChecked(MyAddonDB.settingsKeys[key])
-
+local function SetCheckboxScripts(checkbox, setting)
     checkbox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText(checkboxTooltip, nil, nil, nil, nil, true)
+        GameTooltip:SetText(setting.settingTooltip, nil, nil, nil, nil, true)
     end)
 
     checkbox:SetScript("OnLeave", function(self)
@@ -314,12 +302,22 @@ local function CreateCheckbox(checkboxText, key, checkboxTooltip, index)
     end)
 
     checkbox:SetScript("OnClick", function(self)
-        MyAddonDB.settingsKeys[key] = self:GetChecked()
+        MyAddonDB.settingsKeys[setting.settingKey] = self:GetChecked()
     end)
+end
+
+--- Checkbox Helper Functions ---|
+
+
+local function CreateCheckbox(setting)
+    local checkbox = CreateFrame("CheckButton", "MyAddonCheckboxID" .. settingsHeight, settingsFrame, "UICheckButtonTemplate")
+    checkbox.key = setting.settingKey
+
+    SetCheckboxProperties(checkbox, setting)
+    UpdateCheckbox(checkbox)
+    SetCheckboxScripts(checkbox, setting)
 
     settingsHeight = settingsHeight + 2
-
-    return checkbox
 end
 
 local eventListenerFrame = CreateFrame("Frame", "MyAddonSettingsEventListenerFrame", UIParent)
@@ -333,13 +331,13 @@ eventListenerFrame:SetScript("OnEvent", function(self, event)
 
         for index, setting in pairs(settings) do
             if setting.settingType == "checkbox" then
-                CreateCheckbox(setting.settingText, setting.settingKey, setting.settingTooltip, index)
+                CreateCheckbox(setting, index)
             elseif setting.settingType == "slider" then
-                CreateSlider(setting.settingText, setting.settingKey, setting.settingTooltip, setting.settingMin, setting.settingMax, index)
+                CreateSlider(setting, index)
             elseif setting.settingType == "editbox" or setting.settingType == "editBox" then
-                CreateEditBox(setting.settingText, setting.settingKey, setting.settingTooltip, setting.settingWidth, setting.settingHeight, setting.settingMaxChars, index)
+                CreateEditBox(setting, index)
             elseif setting.settingType == "dropdown" then
-                CreateDropdown(setting.settingText, setting.settingKey, setting.settingTooltip, setting.settingOptions, index)
+                CreateDropdown(setting, index)
             else
                 print("Rain Target Trackers: invalid setting type")
             end

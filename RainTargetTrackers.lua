@@ -146,16 +146,26 @@ local function GetGrowDirection()
     return { 1, 1 }
 end
 
+local function CalculateTargetCountOffset(targetNamePlate)
+    local rowPosition  = (targetCounts[targetNamePlate] - 1) % MyAddonDB.tokensPerRow
+    local tokenScaleMultiplier = MyAddonDB.tokenSize / 16
+    local growDirection = GetGrowDirection()
+    return rowPosition * 20 * tokenScaleMultiplier * growDirection[1] -- this magic number 20 is esssentially the spacing between tokens. It should be added later as an option
+end
+
+local function CalculateRowCountOffset(targetNamePlate)
+    local rowCount = math.ceil(targetCounts[targetNamePlate]/MyAddonDB.tokensPerRow)
+    local tokenScaleMultiplier = MyAddonDB.tokenSize / 16
+    local growDirection = GetGrowDirection()
+    return (rowCount - 1) * 20 * tokenScaleMultiplier * growDirection[2]
+end
+
 local function UpdateTexture(targetNamePlate, texture)
     texture:Hide()
     texture:SetParent(targetNamePlate.UnitFrame)
     if Plater then texture:SetParent(targetNamePlate.unitFrame) end
-    local growDirection = GetGrowDirection()
-    local tokenScaleMultiplier = MyAddonDB.tokenSize / 16
-    local rowPosition = (targetCounts[targetNamePlate] - 1) % MyAddonDB.tokensPerRow
-    local targetCountOffset = (rowPosition) * 20 * tokenScaleMultiplier * growDirection[1]
-    local rowCount = math.ceil(targetCounts[targetNamePlate]/MyAddonDB.tokensPerRow) 
-    local rowCountOffset = (rowCount - 1) * 20 * tokenScaleMultiplier * growDirection[2]
+    local targetCountOffset = CalculateTargetCountOffset(targetNamePlate)
+    local rowCountOffset = CalculateRowCountOffset(targetNamePlate)
     texture:SetPoint("CENTER", targetNamePlate, MyAddonDB.anchor, MyAddonDB.xOffset + targetCountOffset, MyAddonDB.yOffset + rowCountOffset)
     texture:Show()
 end
@@ -239,6 +249,18 @@ local function HideRemovedNamePlateTextures(removedNameplate)
     end
 end
 
+local function InitializePlayerSettings()
+    MyAddonDB.updateInterval = MyAddonDB.updateInterval or 0.2
+    MyAddonDB.tokenSize = MyAddonDB.tokenSize or 16
+    MyAddonDB.tokensPerRow = MyAddonDB.tokensPerRow or 5
+    MyAddonDB.xOffset = MyAddonDB.xOffset or 0
+    MyAddonDB.yOffset = MyAddonDB.yOffset or 0
+    MyAddonDB.rowSpacing = MyAddonDB.rowSpacing or 20
+    MyAddonDB.columnSpacing = MyAddonDB.columnSpacing or 20
+    MyAddonDB.anchor = MyAddonDB.anchor or "TOPLEFT"
+    MyAddonDB.growDirection = MyAddonDB.growDirection or "Right and Up"
+end
+
 local eventListenerFrame = CreateFrame("Frame", "MyAddonEventListenerFrame", UIParent)
 eventListenerFrame:RegisterEvent("ADDON_LOADED")
 eventListenerFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -251,15 +273,7 @@ local function eventHandler(self, event, arg1)
         RefreshTokens()
         if event == "PLAYER_ENTERING_WORLD" then currentTargets = {} end
     elseif event == "ADDON_LOADED" and arg1 == "RainTargetTrackers" then 
-        MyAddonDB.updateInterval = MyAddonDB.updateInterval or 0.2
-        MyAddonDB.tokenSize = MyAddonDB.tokenSize or 16
-        MyAddonDB.tokensPerRow = MyAddonDB.tokensPerRow or 5
-        MyAddonDB.xOffset = MyAddonDB.xOffset or 0
-        MyAddonDB.yOffset = MyAddonDB.yOffset or 0
-        MyAddonDB.rowSpacing = MyAddonDB.rowSpacing or 20
-        MyAddonDB.columnSpacing = MyAddonDB.columnSpacing or 20
-        MyAddonDB.anchor = MyAddonDB.anchor or "TOPLEFT"
-        MyAddonDB.growDirection = MyAddonDB.growDirection or "Right and Up"
+        InitializePlayerSettings()
     elseif event == "PLAYER_SPECIALIZATION_CHANGED" then
         local specIndex = GetSpecialization()
         local specID = GetSpecializationInfo(specIndex)
