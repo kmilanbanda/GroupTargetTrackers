@@ -2,7 +2,7 @@
 ## Title: Rain Target Trackers
 ## Notes: Draws a token over a given target's health bar for each player currently targeting.
 ## Author: Kyle Banda
-## Version: 0.0.5
+## Version: 1.0.0
 ## RequiredDeps:
 ## X-Curse-Project-ID: 999999
 ## SavedVariables:
