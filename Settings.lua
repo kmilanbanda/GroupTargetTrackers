@@ -353,7 +353,7 @@ MyAddonMinimapButton = LibStub("LibDBIcon-1.0", true)
 local miniButton = LibStub("LibDataBroker-1.1"):NewDataObject("GPT", {
 	type = "data source",
 	text = "Rain Target Tracking",
-	icon = "Interface\\AddOns\\RainTargetTrackers\\minimap.tga",
+	icon = "Interface\\AddOns\\RainTargetTrackers\\logo.tga",
 	OnClick = function(self, btn)
         if settingsFrame:IsShown() then
             settingsFrame:Hide()
