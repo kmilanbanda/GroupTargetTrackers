@@ -75,12 +75,18 @@ local settings = {
         settingValue = MyAddonDB.growDirection or { 1, 1, },
         settingOptions = { "Right and Up", "Right and Down", "Left and Up", "Left and Down", },
     },
+    {
+        settingText = "Only Display During Combat",
+        settingTooltip = "If checked, Rain Target Trackers will only display tokens during combat",
+        settingType = "checkbox",
+        settingKey = "onlyDisplayDuringCombat",
+    },
 }
 
 MENU_CLOSED = MENU_CLOSED or "MENU_CLOSED"
 
 local settingsFrame = CreateFrame("Frame", "MyAddonSettingsFrame", UIParent, "BasicFrameTemplateWithInset")
-settingsFrame:SetSize(250, 500)
+settingsFrame:SetSize(250, 550)
 settingsFrame:SetPoint("CENTER")
 settingsFrame.TitleBg:SetHeight(30)
 settingsFrame.title = settingsFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -303,6 +309,7 @@ local function SetCheckboxScripts(checkbox, setting)
 
     checkbox:SetScript("OnClick", function(self)
         MyAddonDB.settingsKeys[setting.settingKey] = self:GetChecked()
+        MyAddonDB[checkbox.key] = MyAddonDB.settingsKeys[setting.settingKey]
     end)
 end
 
