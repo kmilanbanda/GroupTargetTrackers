@@ -250,6 +250,7 @@ local function HideRemovedNamePlateTextures(removedNameplate)
 end
 
 local function InitializePlayerSettings()
+    MyAddonDB.displayPlayerToken = MyAddonDB.displayPlayerToken or true
     MyAddonDB.updateInterval = MyAddonDB.updateInterval or 0.2
     MyAddonDB.tokenSize = MyAddonDB.tokenSize or 16
     MyAddonDB.tokensPerRow = MyAddonDB.tokensPerRow or 5
@@ -259,9 +260,17 @@ local function InitializePlayerSettings()
     MyAddonDB.columnSpacing = MyAddonDB.columnSpacing or 20
     MyAddonDB.anchor = MyAddonDB.anchor or "TOPLEFT"
     MyAddonDB.growDirection = MyAddonDB.growDirection or "Right and Up"
+    MyAddonDB.onlyDisplayDuringCombat = MyAddonDB.onlyDisplayDuringCombat or false
+end
+
+local isInCombat = false
+local function IsInCombat()
+    return isInCombat
 end
 
 local eventListenerFrame = CreateFrame("Frame", "MyAddonEventListenerFrame", UIParent)
+eventListenerFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
+eventListenerFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
 eventListenerFrame:RegisterEvent("ADDON_LOADED")
 eventListenerFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 eventListenerFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
@@ -274,6 +283,7 @@ local function eventHandler(self, event, arg1)
         if event == "PLAYER_ENTERING_WORLD" then currentTargets = {} end
     elseif event == "ADDON_LOADED" and arg1 == "RainTargetTrackers" then 
         InitializePlayerSettings()
+        if not MyAddonDB.onlyDisplayDuringCombat then ticker = InitializeUpdateLoop() end
     elseif event == "PLAYER_SPECIALIZATION_CHANGED" then
         local specIndex = GetSpecialization()
         local specID = GetSpecializationInfo(specIndex)
@@ -282,6 +292,13 @@ local function eventHandler(self, event, arg1)
     elseif event == "NAME_PLATE_UNIT_REMOVED" then
         removedNamePlate = C_NamePlate.GetNamePlateForUnit(arg1)
         HideRemovedNamePlateTextures(removedNamePlate)
+    elseif event == "PLAYER_REGEN_DISABLED" then
+        isInCombat = true
+        if ticker then ticker:Cancel() end
+        ticker = InitializeUpdateLoop()
+    elseif event == "PLAYER_REGEN_ENABLED" then
+        isInCombat = false
+        if MyAddonDB.onlyDisplayDuringCombat then StopUpdateLoop() end
     end
 end
 
@@ -320,6 +337,10 @@ local function UpdatePlayer()
     if not tokenTextures[unitID] then
         CreateToken(unitID)
     end
+    if not MyAddonDB.displayPlayerToken and tokenTextures[unitID]:IsShown() then 
+        tokenTextures[unitID]:Hide()
+        return
+    end
     UpdateToken(unitID)
 end
 
@@ -354,9 +375,16 @@ function InitializeUpdateLoop()
     return C_Timer.NewTicker(updateInterval, Update)
 end
 
+function StopUpdateLoop()
+    ticker:Cancel()
+    for unit, texture in pairs(tokenTextures) do 
+       texture:Hide() 
+    end
+end
+
 function Update()
+    if MyAddonDB.onlyDisplayDuringCombat and not IsInCombat() then StopUpdateLoop() end
     UpdateGroup()
-    if MyAddonDB.settingsKeys["displayPlayerToken"] then UpdatePlayer() end
+    UpdatePlayer()
     ResetTargetCounts()
 end
-ticker = InitializeUpdateLoop()
