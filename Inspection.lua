@@ -55,7 +55,7 @@ inspectionListenerFrame:SetScript("OnEvent", function(_, event, guid)
         end
         table.remove(inspectionQueue, 1)
         inspecting = false
-        MyAddon:TriggerEvent(INSPECTION_COMPLETE, self, unit)
+        RTTAddon:TriggerEvent(INSPECTION_COMPLETE, self, unit)
         C_Timer.After(2, ProcessNextInspection)
     end
 end)
