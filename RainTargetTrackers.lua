@@ -1,6 +1,26 @@
 RTTAddon = LibStub("AceAddon-3.0"):NewAddon("RTTAddon")
 RTTAddon.callbacks = {}
 
+local function InitializePlaterAPIAccess()
+    Plater = _G["Plater"]
+    if Plater then 
+        print("Plater NamePlates successfully accessed by RTT")
+        return Plater 
+    end
+    return nil
+end
+
+local function InitializeElvUIAPIAccess()
+    if ElvUI then
+        local NP = ElvUI[1]:GetModule("NamePlates", true)
+        if NP then
+            print("ElvUI NamePlates successfully accessed by RTT")
+            return NP
+        end
+    end
+    return nil
+end
+
 function RTTAddon:OnInitialize()
     local defaults = {
         profile = {
@@ -32,18 +52,11 @@ function RTTAddon:OnInitialize()
     SlashCmdList["RTT"] = function()
         LibStub("AceConfigDialog-3.0"):Open("RTTAddon")    
     end
-end
 
-print("Rain Target Trackers successfully loaded!")
-
-local function InitializePlaterAPIAccess()
-    Plater = _G["Plater"]
-    if not Plater then
-        print("Plater API could not be accessed.")
-    end
-    return Plater
+    Plater = InitializePlaterAPIAccess()
+    NP = InitializeElvUIAPIAccess()
+    print("Rain Target Trackers successfully loaded!")
 end
-local Plater = InitializePlaterAPIAccess()
 
 local tokenTextures = {}
 local targetCounts = {}
@@ -188,7 +201,11 @@ end
 local function UpdateTexture(targetNamePlate, texture)
     texture:Hide()
     texture:SetParent(targetNamePlate.UnitFrame)
-    if Plater then texture:SetParent(targetNamePlate.unitFrame) end
+    if Plater then 
+        texture:SetParent(targetNamePlate.unitFrame)
+    elseif ElvUI then 
+        texture:SetParent(targetNamePlate) 
+    end
     local targetCountOffset = CalculateTargetCountOffset(targetNamePlate)
     local rowCountOffset = CalculateRowCountOffset(targetNamePlate)
     local anchorNum = RTTAddon.db.profile.anchor
@@ -218,6 +235,16 @@ local function UpdateToken(unit)
                if UnitGUID(unit .. "target") == UnitGUID(plate.unitFrame.unit) then
                    targetNamePlate = plate
                end
+            end
+        elseif ElvUI and ElvUI[1].private.nameplates.enable then
+            if not NP then 
+                NP = InitializeElvUIAPIAccess()
+            end
+            for plate, _ in pairs(NP.Plates) do -- loop through all nameplates (nameplate1, nameplate2, nameplate3, nameplate4, etc.)
+                local plateUnit = plate.unit or (plate.UnitFrame and plate.UnitFrame.unit) or (plate.unitFrame and plate.unitFrame.unit)
+                if UnitGUID(unit .. "target") == UnitGUID(plateUnit) then
+                    targetNamePlate = plate
+                end
             end
         end
         if targetNamePlate then
