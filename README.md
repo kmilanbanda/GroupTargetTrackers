@@ -1,6 +1,6 @@
 # Rain Target Trackers
 
-Rain Target Trackers is a World of Warcraft addon designed to aid target coordination amongst group members. For any enemy nameplate that a group member is targetting, a token (which matches that group member's role) will be placed on top.
+Rain Target Trackers is a World of Warcraft addon designed to aid target coordination amongst group members. For each member of your raid/party, a token will be placed on their target's nameplate. 
 
 ## Features
 
@@ -8,8 +8,8 @@ Rain Target Trackers is a World of Warcraft addon designed to aid target coordin
  - Tokens indicating role, including melee/ranged dps
  - Adjustable update interval for performance
  - Compatible with Plater
+ - Includes Ace3 profile setup commonly used by other addons
 
 ## Planned Additions
 
  - Additional tokens for focus targets
- - Separated settings for raid
