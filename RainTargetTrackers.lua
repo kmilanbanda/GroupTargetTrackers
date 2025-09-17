@@ -1,15 +1,40 @@
-MyAddon = MyAddon or {}
-MyAddon.callbacks = {}
+RTTAddon = LibStub("AceAddon-3.0"):NewAddon("RTTAddon")
+RTTAddon.callbacks = {}
 
-if not MyAddonDB then
-    MyAddonDB = {}
+function RTTAddon:OnInitialize()
+    local defaults = {
+        profile = {
+            displayPlayerToken = true,
+            updateInterval = 0.2,
+            tokenSize = 16,
+            tokensPerRow = 5,
+            xOffset = 0,
+            yOffset = 0,
+            rowSpacing = 20,
+            columnSpacing = 20,
+            anchor = "TOPLEFT",
+            growDirection = 1,
+            onlyDisplayDuringCombat = false,
+
+            minimap = {
+                hide = false,
+            },
+        },   
+    }
+
+    RTTAddon.db = LibStub("AceDB-3.0"):New("RTTDB", defaults, true)
+
+    InitializeOptionsMenu()
+    local LDB = CreateLibraryDataBroker()
+    RegisterMinimap(LDB)
+
+    SLASH_RTT1 = "/rtt"
+    SlashCmdList["RTT"] = function()
+        LibStub("AceConfigDialog-3.0"):Open("RTTAddon")    
+    end
 end
 
 print("Rain Target Trackers successfully loaded!")
-if not MyAddonDB.loadCount then
-    MyAddonDB.loadCount = 0
-end
-MyAddonDB.loadCount = MyAddonDB.loadCount + 1
 
 local function InitializePlaterAPIAccess()
     Plater = _G["Plater"]
@@ -79,7 +104,7 @@ local function CreateToken(unitID)
         texture:SetTexture("Interface\\LFGFrame\\UI-LFG-ICON-ROLES")
         texture:SetAtlas(GetAtlas(unitID))
     end    
-    texture:SetSize(MyAddonDB.tokenSize, MyAddonDB.tokenSize)
+    texture:SetSize(RTTAddon.db.profile.tokenSize, RTTAddon.db.profile.tokenSize)
     tokenTextures[unitID] = texture
 end
 
@@ -97,16 +122,16 @@ local function RefreshToken(unitID)
         QueueInspection(unitID)
     end
 
-    if MyAddonDB.tokenSize then
-        texture:SetSize(MyAddonDB.tokenSize, MyAddonDB.tokenSize)
+    if RTTAddon.db.profile.tokenSize then
+        texture:SetSize(RTTAddon.db.profile.tokenSize, RTTAddon.db.profile.tokenSize)
     else
-        print("Error: MyAddonDB.tokenSize not initialized. Setting to defaults")
+        print("Error: RTTAddon.db.profile.tokenSize not initialized. Setting to defaults")
         texture:SetSize(16, 16)
-        MyAddonDB.tokenSize = 16
+        RTTAddon.db.profile.tokenSize = 16
     end
 end
 
-local function RefreshTokens()
+function RefreshTokens()
     for unit, _ in pairs(tokenTextures) do
         RefreshToken(unit)
     end
@@ -138,24 +163,24 @@ local function ResetTargetCounts()
 end
 
 local function GetGrowDirection()
-    growDirection = MyAddonDB.growDirection
-    if growDirection == "Right and Up" then return { 1, 1 } end
-    if growDirection == "Right and Down" then return { 1, 1 } end
-    if growDirection == "Left and Up" then return { -1, -1 } end
-    if growDirection == "Left and Down" then return { -1, -1 } end
+    local growDirection = RTTAddon.db.profile.growDirection
+    if growDirection == 1 then return { 1, 1 } end
+    if growDirection == 2 then return { 1, -1 } end
+    if growDirection == 3 then return { -1, 1 } end
+    if growDirection == 4 then return { -1, -1 } end
     return { 1, 1 }
 end
 
 local function CalculateTargetCountOffset(targetNamePlate)
-    local rowPosition  = (targetCounts[targetNamePlate] - 1) % MyAddonDB.tokensPerRow
-    local tokenScaleMultiplier = MyAddonDB.tokenSize / 16
+    local rowPosition  = (targetCounts[targetNamePlate] - 1) % RTTAddon.db.profile.tokensPerRow
+    local tokenScaleMultiplier = RTTAddon.db.profile.tokenSize / 16
     local growDirection = GetGrowDirection()
     return rowPosition * 20 * tokenScaleMultiplier * growDirection[1] -- this magic number 20 is esssentially the spacing between tokens. It should be added later as an option
 end
 
 local function CalculateRowCountOffset(targetNamePlate)
-    local rowCount = math.ceil(targetCounts[targetNamePlate]/MyAddonDB.tokensPerRow)
-    local tokenScaleMultiplier = MyAddonDB.tokenSize / 16
+    local rowCount = math.ceil(targetCounts[targetNamePlate]/RTTAddon.db.profile.tokensPerRow)
+    local tokenScaleMultiplier = RTTAddon.db.profile.tokenSize / 16
     local growDirection = GetGrowDirection()
     return (rowCount - 1) * 20 * tokenScaleMultiplier * growDirection[2]
 end
@@ -166,7 +191,8 @@ local function UpdateTexture(targetNamePlate, texture)
     if Plater then texture:SetParent(targetNamePlate.unitFrame) end
     local targetCountOffset = CalculateTargetCountOffset(targetNamePlate)
     local rowCountOffset = CalculateRowCountOffset(targetNamePlate)
-    texture:SetPoint("CENTER", targetNamePlate, MyAddonDB.anchor, MyAddonDB.xOffset + targetCountOffset, MyAddonDB.yOffset + rowCountOffset)
+    local anchorNum = RTTAddon.db.profile.anchor
+    texture:SetPoint("CENTER", targetNamePlate, RTTAddon.db.profile.anchor, RTTAddon.db.profile.xOffset + targetCountOffset, RTTAddon.db.profile.yOffset + rowCountOffset)
     texture:Show()
 end
 
@@ -249,26 +275,12 @@ local function HideRemovedNamePlateTextures(removedNameplate)
     end
 end
 
-local function InitializePlayerSettings()
-    MyAddonDB.displayPlayerToken = MyAddonDB.displayPlayerToken or true
-    MyAddonDB.updateInterval = MyAddonDB.updateInterval or 0.2
-    MyAddonDB.tokenSize = MyAddonDB.tokenSize or 16
-    MyAddonDB.tokensPerRow = MyAddonDB.tokensPerRow or 5
-    MyAddonDB.xOffset = MyAddonDB.xOffset or 0
-    MyAddonDB.yOffset = MyAddonDB.yOffset or 0
-    MyAddonDB.rowSpacing = MyAddonDB.rowSpacing or 20
-    MyAddonDB.columnSpacing = MyAddonDB.columnSpacing or 20
-    MyAddonDB.anchor = MyAddonDB.anchor or "TOPLEFT"
-    MyAddonDB.growDirection = MyAddonDB.growDirection or "Right and Up"
-    MyAddonDB.onlyDisplayDuringCombat = MyAddonDB.onlyDisplayDuringCombat or false
-end
-
 local isInCombat = false
 local function IsInCombat()
     return isInCombat
 end
 
-local eventListenerFrame = CreateFrame("Frame", "MyAddonEventListenerFrame", UIParent)
+local eventListenerFrame = CreateFrame("Frame", "RTTAddonEventListenerFrame", UIParent)
 eventListenerFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
 eventListenerFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
 eventListenerFrame:RegisterEvent("ADDON_LOADED")
@@ -281,9 +293,8 @@ local function eventHandler(self, event, arg1)
         InitializePlayer()
         RefreshTokens()
         if event == "PLAYER_ENTERING_WORLD" then currentTargets = {} end
-    elseif event == "ADDON_LOADED" and arg1 == "RainTargetTrackers" then 
-        InitializePlayerSettings()
-        if not MyAddonDB.onlyDisplayDuringCombat then ticker = InitializeUpdateLoop() end
+    elseif event == "ADDON_LOADED" and arg1 == "RainTargetTrackers" then
+        if not RTTAddon.db.profile.onlyDisplayDuringCombat then ticker = InitializeUpdateLoop() end
     elseif event == "PLAYER_SPECIALIZATION_CHANGED" then
         local specIndex = GetSpecialization()
         local specID = GetSpecializationInfo(specIndex)
@@ -298,7 +309,7 @@ local function eventHandler(self, event, arg1)
         ticker = InitializeUpdateLoop()
     elseif event == "PLAYER_REGEN_ENABLED" then
         isInCombat = false
-        if MyAddonDB.onlyDisplayDuringCombat then StopUpdateLoop() end
+        if RTTAddon.db.profile.onlyDisplayDuringCombat then StopUpdateLoop() end
     end
 end
 
@@ -313,7 +324,7 @@ end
 
 function OnMenuClosed(frame)
     if ticker then ticker:Cancel() end
-    ticker = C_Timer.NewTicker(MyAddonDB.updateInterval, Update)
+    ticker = C_Timer.NewTicker(RTTAddon.db.profile.updateInterval, Update)
     RefreshTokens()    
 end
 
@@ -331,13 +342,17 @@ local function ResetTargetCounts()
     end
 end
 
+function HidePlayerTexture()
+    tokenTextures["player"]:Hide()
+end
+
 local function UpdatePlayer()
     unitID = "player"
     if UnitInRaid(unitID) then return end
     if not tokenTextures[unitID] then
         CreateToken(unitID)
     end
-    if not MyAddonDB.displayPlayerToken and tokenTextures[unitID]:IsShown() then 
+    if not RTTAddon.db.profile.displayPlayerToken and tokenTextures[unitID]:IsShown() then 
         tokenTextures[unitID]:Hide()
         return
     end
@@ -371,7 +386,7 @@ local function UpdateGroup()
 end
 
 function InitializeUpdateLoop()
-    local updateInterval = MyAddonDB.updateInterval or 0.2
+    local updateInterval = RTTAddon.db.profile.updateInterval or 0.2
     return C_Timer.NewTicker(updateInterval, Update)
 end
 
@@ -383,8 +398,8 @@ function StopUpdateLoop()
 end
 
 function Update()
-    if MyAddonDB.onlyDisplayDuringCombat and not IsInCombat() then StopUpdateLoop() end
+    if RTTAddon.db.profile.onlyDisplayDuringCombat and not IsInCombat() then StopUpdateLoop() end
     UpdateGroup()
-    UpdatePlayer()
+    if RTTAddon.db.profile.displayPlayerToken then UpdatePlayer() end
     ResetTargetCounts()
 end
