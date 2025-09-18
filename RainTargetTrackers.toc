@@ -4,6 +4,7 @@
 ## Author: Kyle Banda
 ## Version: 1.1.0
 ## RequiredDeps:
+## OptionalDeps: ElvUI
 ## X-Curse-Project-ID: 134311
 ## SavedVariables: RTTDB
 ## SavedVariablesPerCharacter: RTTCharDB
