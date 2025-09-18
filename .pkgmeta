@@ -1,0 +1,8 @@
+package-as: RainTargetTrackers
+
+ignore:
+  - .git
+  - .github
+  - .gitignore
+  - README.md
+  - LICENSE.md
