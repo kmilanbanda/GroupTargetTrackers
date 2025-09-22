@@ -1,7 +1,7 @@
 function InitializeOptionsMenu()
     local options = {
         type = "group",
-        name = "Rain Target Trackers",
+        name = "Group Target Trackers",
         args = {
             display = {
                 type = "group",
@@ -124,19 +124,19 @@ function InitializeOptionsMenu()
     }
 
     LibStub("AceConfig-3.0"):RegisterOptionsTable("RTTAddon", options)
-    LibStub("AceConfigDialog-3.0"):AddToBlizOptions("RTTAddon", "Rain Target Trackers")
+    LibStub("AceConfigDialog-3.0"):AddToBlizOptions("RTTAddon", "Group Target Trackers")
 end
 
 function CreateLibraryDataBroker()
     local LDB = LibStub("LibDataBroker-1.1"):NewDataObject("RTTAddon", {
         type  = "launcher",
         text = "RTT",
-        icon = "Interface\\AddOns\\RainTargetTrackers\\logo.tga",
+        icon = "Interface\\AddOns\\GroupTargetTrackers\\Textures\\GroupTargetTrackers.blp",
         OnClick = function(_, button)
             LibStub("AceConfigDialog-3.0"):Open("RTTAddon")
         end,
         OnTooltipShow = function(tooltip)
-            tooltip:AddLine("RainTargetTrackers")
+            tooltip:AddLine("GroupTargetTrackers")
             tooltip:AddLine("|cffffff00Click|r to open options")
         end,
     })
@@ -157,7 +157,7 @@ settingsFrame:SetPoint("CENTER")
 settingsFrame.TitleBg:SetHeight(30)
 settingsFrame.title = settingsFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 settingsFrame.title:SetPoint("CENTER", settingsFrame.TitleBg, "CENTER", 0, 3)
-settingsFrame.title:SetText("Rain Target Tokens")
+settingsFrame.title:SetText("Group Target Trackers")
 settingsFrame:Hide()
 settingsFrame:EnableMouse(true)
 settingsFrame:SetMovable(true)

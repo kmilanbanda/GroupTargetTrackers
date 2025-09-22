@@ -1,4 +1,4 @@
-package-as: RainTargetTrackers
+package-as: GroupTargetTrackers
 
 ignore:
   - .git
