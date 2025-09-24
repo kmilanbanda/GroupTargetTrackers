@@ -20,7 +20,8 @@ libs/LibDataBroker-1.1/LibDataBroker-1.1.lua
 libs/LibDBIcon-1.0/LibDBIcon-1.0/LibDBIcon-1.0.lua
 
 # Main Files
-SpecRoles.lua
+RoleIcons.lua
+ClassIcons.lua
 Inspection.lua
 GroupTargetTrackers.lua
 Settings.lua
