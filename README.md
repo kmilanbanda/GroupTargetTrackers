@@ -14,3 +14,8 @@ Group Target Trackers is a World of Warcraft addon designed to aid target coordi
 ## Planned Additions
 
  - Additional tokens for focus targets
+
+## Contributors
+
+ - kmilanbanda (Main Author)
+ - wasoruda (Contributor: class colors for icons)
