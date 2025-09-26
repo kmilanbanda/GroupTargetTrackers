@@ -2,7 +2,8 @@
 ## Title: Group Target Trackers
 ## Notes: Displays a token over a given target's health bar for each party member currently targeting.
 ## Author: Kyle Banda
-## Version: 1.1.1
+## Version: 1.2.0
+## X-Credits: wasoruda (contributor)
 ## RequiredDeps:
 ## OptionalDeps: ElvUI
 ## X-Curse-Project-ID: 134311
