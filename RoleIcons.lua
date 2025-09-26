@@ -1,4 +1,4 @@
-_G.specRoles = {
+_G.roleIcons = {
     -- Death Knight
     [250] = "tank", -- Blood
     [251] = "mdps", -- Frost

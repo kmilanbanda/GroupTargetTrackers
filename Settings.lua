@@ -8,6 +8,7 @@ function InitializeOptionsMenu()
                 name = "Display",
                 args = {
                     displayPlayerToken = {
+                        order = 2,
                         type = "toggle",
                         name = "Display Player Token",
                         get = function(info) return RTTAddon.db.profile.displayPlayerToken end,
@@ -17,6 +18,7 @@ function InitializeOptionsMenu()
                         end,
                     },
                     updateInterval = {
+                        order = 7,
                         type = "range",
                         name = "Update Interval",
                         desc = "Adjust the time between token updates",
@@ -30,6 +32,7 @@ function InitializeOptionsMenu()
                         end,
                     },
                     tokenSize = {
+                        order = 5,
                         type = "range",
                         name = "Token Size",
                         desc = "Adjust the size of the tokens",
@@ -44,6 +47,7 @@ function InitializeOptionsMenu()
                         end,
                     },
                     tokensPerRow = {
+                        order = 6,
                         type = "range",
                         name = "Tokens Per Row",
                         desc = "Adjust the number of tokens placed in a row before starting the next row",
@@ -57,6 +61,7 @@ function InitializeOptionsMenu()
                         end,
                     },
                     xOffset = {
+                        order = 8,
                         type = "input",
                         name = "X-Offset",
                         desc = "Enter the X-Offset for the first token in the first row",
@@ -68,6 +73,7 @@ function InitializeOptionsMenu()
                         end,
                     },
                     yOffset = {
+                        order = 9,
                         type = "input",
                         name = "Y-Offset",
                         desc = "Enter the X-Offset for the first token in the first row",
@@ -79,6 +85,7 @@ function InitializeOptionsMenu()
                         end,
                     },
                     anchor = {
+                        order = 1,
                         type = "select",
                         style = "dropdown",
                         name = "Anchor Position",
@@ -98,6 +105,7 @@ function InitializeOptionsMenu()
                         set = function(info, val) RTTAddon.db.profile.anchor = val end,
                     },
                     growDirection = {
+                        order = 3,
                         type = "select",
                         style = "dropdown",
                         name = "Grow Direction",
@@ -107,6 +115,7 @@ function InitializeOptionsMenu()
                         set = function(info, val) RTTAddon.db.profile.growDirection = val end,
                     },
                     onlyDisplayDuringCombat = {
+                        order = 4,
                         type = "toggle",
                         name = "Only Display During Combat",
                         get = function(info) return RTTAddon.db.profile.onlyDisplayDuringCombat end,
@@ -116,6 +125,19 @@ function InitializeOptionsMenu()
                                 InitializeUpdateLoop()
                             end
                         end,
+                    },
+                    iconStyle = {
+                        order = 10,
+                        type = "select",
+                        style = "dropdown",
+                        name = "Icon Style (requires reload)",
+                        desc = "Select the display style of tokens",
+                        values = {
+                            roleIcons = "Role Icons", 
+                            classIcons = "Class Icons", 
+                        },
+                        get = function(info) return RTTAddon.db.profile.iconStyle end,
+                        set = function(info, val) RTTAddon.db.profile.iconStyle = val end,
                     },
                 },
             },

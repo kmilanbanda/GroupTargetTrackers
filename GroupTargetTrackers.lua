@@ -35,6 +35,7 @@ function RTTAddon:OnInitialize()
             anchor = "TOPLEFT",
             growDirection = 1,
             onlyDisplayDuringCombat = false,
+            iconStyle = classIcons,
 
             minimap = {
                 hide = false,
@@ -62,26 +63,20 @@ local tokenTextures = {}
 local targetCounts = {}
 local currentTargets = {}
 
-local function GetUnitRole(unitID) -- possible roles: "tank", "healer", "rdps", "mdps"
+local function GetUnitIcon(unitID) -- possible roles: "tank", "healer", "rdps", "mdps"
    unitSpecID = unitSpecCache[UnitGUID(unitID)]
-   return specRoles[unitSpecID]
+   if RTTAddon.db.profile.iconStyle then
+        if RTTAddon.db.profile.iconStyle == "classIcons" then
+            return classIcons[unitSpecID]
+        end  
+   end
+   
+   return roleIcons[unitSpecID]
 end
 
 local function GetTexturePath(unitID)
-    local role = GetUnitRole(unitID)
-    local path = ""
-    if role == "tank" then
-        path =  "Interface\\Addons\\GroupTargetTrackers\\Textures\\tank.blp"
-    elseif role == "healer" then
-        path =  "Interface\\Addons\\GroupTargetTrackers\\Textures\\healer.blp"
-    elseif role == "rdps" then
-        path =  "Interface\\Addons\\GroupTargetTrackers\\Textures\\rdps.blp"
-    elseif role == "mdps" then
-        path =  "Interface\\Addons\\GroupTargetTrackers\\Textures\\mdps.blp"
-    else
-        print("Error: no role or incorrect role given. role =", role)
-    end
-    return path
+    local icon = GetUnitIcon(unitID)
+    return "Interface\\Addons\\GroupTargetTrackers\\Textures\\" ..  icon
 end
 
 local function GetAtlas(unitID)
